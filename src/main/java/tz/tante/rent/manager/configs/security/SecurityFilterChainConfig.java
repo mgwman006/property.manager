@@ -1,9 +1,9 @@
 package tz.tante.rent.manager.configs.security;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,6 +21,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityFilterChainConfig
 {
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception
@@ -30,9 +32,7 @@ public class SecurityFilterChainConfig
       .cors(cors -> {})
       .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
       .exceptionHandling(ex -> ex
-        .authenticationEntryPoint((req, res, e) ->
-          res.sendError(HttpServletResponse.SC_UNAUTHORIZED)
-        )
+        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
       )
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(
@@ -41,6 +41,8 @@ public class SecurityFilterChainConfig
           "/swagger-ui.html",
           "/v3/api-docs/**"
         ).permitAll()
+        .requestMatchers(HttpMethod.POST, "/v1/users/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/v1/users/*").permitAll()
         .anyRequest().authenticated()
       );
 

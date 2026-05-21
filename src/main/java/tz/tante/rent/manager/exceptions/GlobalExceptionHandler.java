@@ -1,5 +1,7 @@
 package tz.tante.rent.manager.exceptions;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -47,6 +49,21 @@ public class GlobalExceptionHandler {
   {
     return ResponseEntity.status(HttpStatus.CONFLICT).
       body(ApiResponse.failure(Constant.VERSION_CONFLICT_MESSAGE,exception.getMessage(),HttpStatus.CONFLICT.value()));
+  }
+
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
+    ConstraintViolationException ex) {
+
+    String message = ex.getConstraintViolations()
+      .stream()
+      .map(ConstraintViolation::getMessage)
+      .findFirst()
+      .orElse("Validation failed");
+
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(ApiResponse.failure(Constant.VALIDATION_FAILED_MESSAGE,message, HttpStatus.BAD_REQUEST.value()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

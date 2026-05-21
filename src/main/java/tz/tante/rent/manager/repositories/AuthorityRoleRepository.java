@@ -7,4 +7,6 @@ import tz.tante.rent.manager.models.entities.AuthorityRole;
 public interface AuthorityRoleRepository extends JpaRepository<AuthorityRole, Long>
 {
   boolean existsByName(AuthorityRoleName authorityRoleName);
+
+  AuthorityRole findByName(AuthorityRoleName name);
 }

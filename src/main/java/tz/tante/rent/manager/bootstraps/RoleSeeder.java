@@ -4,29 +4,29 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import tz.tante.rent.manager.enums.AuthorityRoleName;
-import tz.tante.rent.manager.enums.RoleName;
+import tz.tante.rent.manager.enums.BusinessMembershipRoleName;
 import tz.tante.rent.manager.models.entities.AuthorityRole;
-import tz.tante.rent.manager.models.entities.Role;
+import tz.tante.rent.manager.models.entities.BusinessMembershipRole;
 import tz.tante.rent.manager.repositories.AuthorityRoleRepository;
-import tz.tante.rent.manager.repositories.RoleRepository;
+import tz.tante.rent.manager.repositories.BusinessMembershipRoleRepository;
 
 @Component
 @RequiredArgsConstructor
 public class RoleSeeder implements CommandLineRunner
 {
-  private final RoleRepository roleRepository;
+  private final BusinessMembershipRoleRepository businessMembershipRoleRepository;
   private final AuthorityRoleRepository authorityRoleRepository;
 
   @Override
   public void run(String... args)
   {
-    for (RoleName roleName : RoleName.values())
+    for (BusinessMembershipRoleName businessMembershipRoleName : BusinessMembershipRoleName.values())
     {
-      if (!roleRepository.existsByName(roleName))
+      if (!businessMembershipRoleRepository.existsByName(businessMembershipRoleName))
       {
-        Role role = new Role();
-        role.setName(roleName);
-        roleRepository.save(role);
+        BusinessMembershipRole businessMembershipRole = new BusinessMembershipRole();
+        businessMembershipRole.setName(businessMembershipRoleName);
+        businessMembershipRoleRepository.save(businessMembershipRole);
       }
     }
 

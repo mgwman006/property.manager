@@ -26,5 +26,5 @@ public class Membership extends BaseEntity
     joinColumns = @JoinColumn(name = "membership_id"),
     inverseJoinColumns = @JoinColumn(name = "role_id")
   )
-  private Set<Role> roles = new HashSet<>();
+  private Set<BusinessMembershipRole> businessMembershipRoles = new HashSet<>();
 }

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import tz.tante.rent.manager.enums.AuthorityRoleName;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,5 +50,10 @@ public class Account extends BaseEntity
   {
     this.phoneNumber = phoneNumber;
     this.password = password;
+  }
+
+  public void addAuthorityRole(AuthorityRole authorityRole)
+  {
+    this.authorityRoles.add(authorityRole);
   }
 }

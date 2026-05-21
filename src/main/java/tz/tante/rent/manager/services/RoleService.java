@@ -5,11 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Service;
-import tz.tante.rent.manager.enums.RoleName;
+import tz.tante.rent.manager.enums.BusinessMembershipRoleName;
 import tz.tante.rent.manager.exceptions.TanteException;
 import tz.tante.rent.manager.exceptions.ResourceNotFoundException;
-import tz.tante.rent.manager.models.entities.Role;
-import tz.tante.rent.manager.repositories.RoleRepository;
+import tz.tante.rent.manager.models.entities.BusinessMembershipRole;
+import tz.tante.rent.manager.repositories.BusinessMembershipRoleRepository;
 
 @Getter
 @Setter
@@ -17,14 +17,14 @@ import tz.tante.rent.manager.repositories.RoleRepository;
 @Service
 public class RoleService
 {
-  private final RoleRepository roleRepository;
+  private final BusinessMembershipRoleRepository businessMembershipRoleRepository;
 
-  public Role getRoleByName(RoleName roleName)
+  public BusinessMembershipRole getRoleByName(BusinessMembershipRoleName businessMembershipRoleName)
   {
     try
     {
-      return roleRepository.findByName(roleName)
-        .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + roleName));
+      return businessMembershipRoleRepository.findByName(businessMembershipRoleName)
+        .orElseThrow(() -> new ResourceNotFoundException("BusinessMembershipRole not found: " + businessMembershipRoleName));
     }
     catch (Exception exception)
     {

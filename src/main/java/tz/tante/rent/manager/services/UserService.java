@@ -1,128 +1,112 @@
 package tz.tante.rent.manager.services;
 
 import lombok.AllArgsConstructor;
+import tz.tante.rent.manager.enums.AuthorityRoleName;
 import tz.tante.rent.manager.exceptions.TanteException;
 import tz.tante.rent.manager.exceptions.ResourceNotFoundException;
+import tz.tante.rent.manager.models.dtos.requests.Users.UserCreateRequestDto;
+import tz.tante.rent.manager.models.dtos.responses.MembershipDetailsDTO;
+import tz.tante.rent.manager.models.dtos.responses.users.UserDetailsDTO;
+import tz.tante.rent.manager.models.entities.Account;
+import tz.tante.rent.manager.models.entities.AuthorityRole;
+import tz.tante.rent.manager.models.entities.Tenant;
 import tz.tante.rent.manager.models.entities.User;
+import tz.tante.rent.manager.repositories.AccountRepository;
+import tz.tante.rent.manager.repositories.AuthorityRoleRepository;
 import tz.tante.rent.manager.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import tz.tante.rent.manager.utilities.Utils;
+import java.util.ArrayList;
 
 
 @AllArgsConstructor
 @Service
 public class UserService {
 
+  private final AccountRepository accountRepository;
   private final UserRepository userRepository;
+  private final AuthorityRoleRepository authorityRoleRepository;
 
-//  public User getUserByUserName(String userName)
-//  {
-//    try
-//    {
-//      return userRepository.findByUsername(userName)
-//        .orElseThrow( () -> new ResourceNotFoundException("User not found"));
-//    }
-//    catch (Exception exception)
-//    {
-//      throw new TanteException(exception.getMessage());
-//    }
-//  }
+  public UserDetailsDTO getUserByPhoneNumber(String phoneNumber)
+  {
+    try
+    {
+      String normalizedPhoneNumber = Utils.normalizePhone(phoneNumber);
+      Account account = accountRepository.findByPhoneNumber(normalizedPhoneNumber)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
+      User user = account.getUser();
+      if (user == null)
+      {
+        throw new ResourceNotFoundException("User not found");
+      }
 
+      Tenant tenant = user.getTenantProfile();
 
+      return new UserDetailsDTO(
+        user.getId(),
+        user.getFirstName(),
+        user.getLastName(),
+        account.getPhoneNumber(),
+        tenant == null ? null: tenant.getId(),
+        user.getMemberships()
+          .stream()
+          .map(membership -> new MembershipDetailsDTO(
+            membership.getId(),
+            membership.getUser() == null ? null:membership.getUser().getId(),
+            membership.getRentalProfile() == null ? null:membership.getRentalProfile().getId(),
+            membership.getBusinessMembershipRoles()
+              .stream()
+              .map(r -> r.getName().name())
+              .toList()
+          ))
+          .toList()
+      );
+    }
+    catch (ResourceNotFoundException exception)
+    {
+      throw exception;
+    }
+    catch (Exception exception)
+    {
+      throw new TanteException(exception.getMessage());
+    }
+  }
 
-//    public UserResponseDto registerUser(NewUserRequestDto userRequest) {
-//
-//        User newUser = new User(
-//                userRequest.firstName(),
-//                userRequest.lastName(),
-//                userRequest.email(),
-//                userRequest.passWord()
-//        );
-//        User createdUser = userRepository.save(newUser);
-//        System.out.println(createdUser.toString());
-//        return new UserResponseDto(
-//                createdUser.getId(),
-//                createdUser.getFirstName(),
-//                createdUser.getLastName(),
-//                createdUser.getEmail(),
-//                Optional.of(createdUser.getPassWord()));
-//    }
+  public UserDetailsDTO createUser(UserCreateRequestDto request)
+  {
+    try
+    {
+      String normalizedPhoneNumber = Utils.normalizePhone(request.phoneNumber());
+      Account account = accountRepository.findByPhoneNumber(normalizedPhoneNumber)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
-//    public List<UserResponseDto> getAllUsers() {
-//        List<User> users = userRepository.findAll();
-//        return  users.stream().map
-//                (u -> new
-//                    UserResponseDto
-//                    (
-//                            u.getId(),
-//                            u.getEmail(),
-//                            u.getPassWord()
-//                    )
-//                ).toList();
-//    }
-//
+      AuthorityRole role = authorityRoleRepository.findByName(AuthorityRoleName.ROLE_USER);
+      account.addAuthorityRole(role);
 
+      User user = new User(request.firstName(), request.lastName());
+      user.setAccount(account);
 
-//    public UserLogInResponseDto logIng(UserLogInRequestDto logInRequest) {
-//
-//        Optional<User> optionalUser = userRepository.findByEmail(logInRequest.email());
-//        if (optionalUser.isEmpty())
-//            return new UserLogInResponseDto(
-//                    UserStatus.LogInFail,
-//                    "user not exist",
-//                    Optional.empty());
-//
-//        User user = optionalUser.get();
-//
-//        if (!user.getPassWord().equals(logInRequest.passWord()))
-//            return new UserLogInResponseDto(
-//                    UserStatus.LogInFail,
-//                    "wrong password",
-//                    Optional.empty());
-//
-//        return new UserLogInResponseDto(
-//                UserStatus.LogInSuccess,
-//                "success",
-//                Optional.of( new UserResponseDto(
-//                        user.getId(),
-//                        user.getEmail(),
-//                        user.getPassWord()
-//                        )
-//                ));
-//    }
+      account.setUser(user);
 
-//    public UpdateUserResponseDto updateUser(Long userId, UpdateUserRequestDto updateUserRequest)
-//    {
-//        Optional<User> optionalUser = userRepository.findById(userId);
-//        if (optionalUser.isEmpty())
-//            return new UpdateUserResponseDto(
-//                UserStatus.UpdateFail,
-//                    "User Not Exist",
-//                    Optional.empty()
-//            );
-//
-//        User user = optionalUser.get();
-//        user.update(
-//                updateUserRequest.firstName(),
-//                updateUserRequest.lastName(),
-//                updateUserRequest.email(),
-//                updateUserRequest.passWord()
-//        );
-//
-//        User updated = userRepository.save(user);
-//
-//        return new UpdateUserResponseDto(
-//                UserStatus.UpdateSuccess,
-//                "update success",
-//                Optional.of(new UserResponseDto(
-//                        user.getId(),
-//                        user.getFirstName(),
-//                        user.getLastName(),
-//                        user.getEmail(),
-//                        Optional.of(user.getPassWord())
-//                ))
-//        );
-//
-//
-//    }
+      user = userRepository.save(user);
+
+      return new UserDetailsDTO(
+        user.getId(),
+        user.getFirstName(),
+        user.getLastName(),
+        user.getAccount().getPhoneNumber(),
+        null,
+        new ArrayList<>()
+      );
+    }
+    catch (ResourceNotFoundException exception)
+    {
+      throw exception;
+    }
+    catch (Exception exception)
+    {
+      throw new TanteException(exception.getMessage());
+    }
+  }
 }

@@ -1,6 +1,6 @@
 package tz.tante.rent.manager.enums;
 
-public enum RoleName
+public enum BusinessMembershipRoleName
 {
   ROLE_MANAGER,
   ROLE_OWNER,

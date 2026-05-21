@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,11 +19,14 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter
 {
   private final JwtUtils jwtUtils;
+  private final JwtAuthenticationEntryPoint authenticationEntryPoint;
 
-  public JwtAuthenticationFilter(JwtUtils jwtUtils)
+  public JwtAuthenticationFilter(JwtUtils jwtUtils, JwtAuthenticationEntryPoint authenticationEntryPoint)
   {
     this.jwtUtils = jwtUtils;
+    this.authenticationEntryPoint = authenticationEntryPoint;
   }
+
 
   @Override
   protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -53,9 +57,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter
     }
     catch (Exception exception)
     {
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      response.setContentType("application/json");
-      response.getWriter().write(exception.getMessage());
+      authenticationEntryPoint.commence(
+        request,
+        response,
+        new BadCredentialsException(exception.getMessage(),exception)
+      );
     }
 
   }

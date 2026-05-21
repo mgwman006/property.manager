@@ -4,15 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-import tz.tante.rent.manager.enums.RoleName;
-import tz.tante.rent.manager.exceptions.ResourceExistException;
-import tz.tante.rent.manager.exceptions.TanteException;
-import tz.tante.rent.manager.models.dtos.requests.landlord.LandLordRequestDto;
-import tz.tante.rent.manager.models.dtos.responses.LandLordResponseDto;
-import tz.tante.rent.manager.models.entities.RentalProfile;
-import tz.tante.rent.manager.models.entities.Role;
-import tz.tante.rent.manager.models.entities.User;
 import org.springframework.stereotype.Service;
 import tz.tante.rent.manager.repositories.LandlordRepository;
 import tz.tante.rent.manager.repositories.UserRepository;
@@ -55,7 +46,7 @@ public class LandLordService
 //        String encodedPassword = passwordEncoder.encode(requestDto.passWord());
 //
 //        user = new User(requestDto.phoneNumber(), encodedPassword);
-//        Role landlordRole = roleService.getRoleByName(RoleName.ROLE_LANDLORD.toString());
+//        BusinessMembershipRole landlordRole = roleService.getRoleByName(BusinessMembershipRoleName.ROLE_LANDLORD.toString());
 //        user.addRole(landlordRole);
 //
 //        userRepository.save(user);
