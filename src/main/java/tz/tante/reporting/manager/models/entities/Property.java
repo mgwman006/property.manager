@@ -21,18 +21,6 @@ public class Property extends BaseEntity
   @Enumerated(EnumType.STRING)
   private PropertyType type;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
-  private OwnershipType ownershipType;
-
-  @OneToMany(
-    mappedBy = "property",
-    cascade = CascadeType.ALL,
-    fetch = FetchType.LAZY
-  )
-  private List<Unit> units = new ArrayList<>();
-
-
   @Embedded
   private Address address;
 
