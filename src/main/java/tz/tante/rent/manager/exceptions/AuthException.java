@@ -1,9 +1,0 @@
-package tz.tante.rent.manager.exceptions;
-
-public class AuthException extends TanteException
-{
-  public AuthException(String message)
-  {
-    super(message);
-  }
-}
