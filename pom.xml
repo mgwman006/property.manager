@@ -14,10 +14,10 @@
 	</parent>
 
 	<groupId>tz.tante</groupId>
-	<artifactId>reporting.manager</artifactId>
+	<artifactId>property-manager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
-	<name>reporting.manager</name>
+	<name>property-manager</name>
 	<description>Construction Reporting Manager</description>
 
 	<properties>
@@ -98,6 +98,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>9.31</version>
 		</dependency>
 
 	</dependencies>
