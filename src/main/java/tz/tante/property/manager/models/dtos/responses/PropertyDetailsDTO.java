@@ -2,6 +2,8 @@ package tz.tante.property.manager.models.dtos.responses;
 
 import tz.tante.property.manager.models.dtos.AddressDTO;
 
+import java.util.List;
+
 public record PropertyDetailsDTO(
   Long id,
   String description,
@@ -15,6 +17,7 @@ public record PropertyDetailsDTO(
   AddressDTO address,
   String type,
   String developmentStatus,
-  String status)
+  String status,
+  List<UnitDetailsDTO>units)
 {
 }

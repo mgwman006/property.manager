@@ -3,6 +3,8 @@ package tz.tante.property.manager.utilities;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -18,7 +20,8 @@ import tz.tante.property.manager.exceptions.AuthException;
 public class JwtUtils
 {
 
-  private final Key key = Keys.hmacShaKeyFor(Constant.jwtSecret.getBytes(StandardCharsets.UTF_8));
+  private  static final Key key = Keys.hmacShaKeyFor(Constant.jwtSecret.getBytes(StandardCharsets.UTF_8));
+  private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
 
   public String generateToken(String username, Set<String> roles) {
     return Jwts.builder()
@@ -35,9 +38,10 @@ public class JwtUtils
   {
     try
     {
-      String EXPECTED_ISSUER = "https://auth.example.com";
+      String EXPECTED_ISSUER = "tz.tante.auth";
       SignedJWT jwt = SignedJWT.parse(token);
       String issuer = jwt.getJWTClaimsSet().getIssuer();
+      log.info(EXPECTED_ISSUER+" == "+issuer);
       return EXPECTED_ISSUER.equals(issuer);
     }
     catch (Exception exception)
@@ -46,7 +50,7 @@ public class JwtUtils
     }
   }
 
-  private Claims getClaims(String token) {
+  public static Claims getClaims(String token) {
     return Jwts.parserBuilder()
       .setSigningKey(key)
       .build()
