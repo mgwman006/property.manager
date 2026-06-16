@@ -23,16 +23,6 @@ public class JwtUtils
   private  static final Key key = Keys.hmacShaKeyFor(Constant.jwtSecret.getBytes(StandardCharsets.UTF_8));
   private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
 
-  public String generateToken(String username, Set<String> roles) {
-    return Jwts.builder()
-      .setSubject(username)
-      .setIssuer("tz.tante.auth")
-      .setIssuedAt(new Date())
-      .setExpiration(new Date(System.currentTimeMillis() + Constant.jwtExpirationMs))
-      .signWith(key)
-      .compact();
-  }
-
 
   public static boolean isValidIssuer(String token)
   {

@@ -20,6 +20,14 @@ public class Unit extends BaseEntity
 {
   private String unitNumber;
 
+  private Long rentalProfileId;
+
+  private int numberOfBedrooms;
+
+  private int numberOfBathrooms;
+
+  private int numberParkingSpots;
+
   private BigDecimal rentAmount;
 
   @Enumerated(EnumType.STRING)
