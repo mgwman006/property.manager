@@ -24,8 +24,6 @@ public class Property extends BaseEntity
   @Column(length = 2000)
   private String description;
 
-  private Long managingOrganizationId;
-
   @Column(nullable = false)
   private Long creatorId;
 
@@ -65,24 +63,6 @@ public class Property extends BaseEntity
     cascade = CascadeType.ALL,
     fetch = FetchType.LAZY
   )
-  private List<Unit> units = new ArrayList<>();
+  private List<Building> buildings = new ArrayList<>();
 
-  public Property(String description, Long aLong, Long aLong1, String name,
-                  String s, Long aLong2, String s1, Double latitude, Double longitude,
-                  Address address, PropertyCategory type, DevelopmentStatus developmentStatus, PropertyStatus status)
-  {
-    this.description = description;
-    this.managingOrganizationId = aLong;
-    this.creatorId = aLong1;
-    this.name = name;
-    this.code = s;
-    this.landSize = aLong2;
-    this.landSizeUnit = s1;
-    this.latitude = latitude;
-    this.longitude = longitude;
-    this.address = address;
-    this.type = type;
-    this.developmentStatus = developmentStatus;
-    this.status = status;
-  }
 }

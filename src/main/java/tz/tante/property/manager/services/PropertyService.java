@@ -14,8 +14,8 @@ import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
+import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.models.entities.Address;
 import tz.tante.property.manager.models.entities.Property;
 import tz.tante.property.manager.repositories.PropertyRepository;
@@ -36,27 +36,27 @@ public class PropertyService
   {
     try
     {
-      Property property = new Property(
-        request.description(),
-        request.managingOrganizationId(),
-        request.creatorId(),
-        request.name(),
-        "",
-        request.landSize(),
-        request.landSizeUnit(),
-        request.latitude(),
-        request.longitude(),
+      Property property = new Property();
+
+      property.setDescription(request.description());
+      property.setCreatorId(request.creatorId());
+      property.setName(request.name());
+      property.setLandSize(request.landSize());
+      property.setLandSizeUnit(request.landSizeUnit());
+      property.setLatitude(request.latitude());
+      property.setLongitude(request.longitude());
+      property.setAddress(
         new Address(
           request.address().street(),
           request.address().area(),
           request.address().city(),
           request.address().region(),
           request.address().country()
-        ),
-        request.type(),
-        request.developmentStatus(),
-        request.status()
-      );
+        ));
+      property.setType(request.type());
+      property.setDevelopmentStatus(request.developmentStatus());
+      property.setStatus(request.status());
+
 
       property = propertyRepository.save(property);
 
@@ -66,7 +66,6 @@ public class PropertyService
       return new PropertyDetailsDTO(
         property.getId(),
         property.getDescription(),
-        property.getManagingOrganizationId(),
         property.getCreatorId(),
         property.getName(),
         property.getLandSize(),
@@ -126,7 +125,6 @@ public class PropertyService
     return new PropertyDetailsDTO(
       property.getId(),
       property.getDescription(),
-      property.getManagingOrganizationId(),
       property.getCreatorId(),
       property.getName(),
       property.getLandSize(),
@@ -143,16 +141,14 @@ public class PropertyService
       property.getType().toString(),
       property.getDevelopmentStatus().toString(),
       property.getStatus().toString(),
-      property.getUnits() == null ? new ArrayList<>() :
-        property.getUnits().stream().map(unit -> new UnitDetailsDTO(
-          unit.getId(),
-          unit.getUnitNumber(),
-          unit.getRentAmount(),
-          unit.getType().toString(),
-          unit.getStatus().toString(),
-          unit.getSize(),
-          unit.getSizeUnit(),
-          property.getId()
+      property.getBuildings() == null ? new ArrayList<>() :
+        property.getBuildings().stream().map(building -> new BuildingDetailsDTO(
+          building.getId(),
+          building.getCode(),
+          building.getName(),
+          building.getDescription(),
+          property.getId(),
+          new ArrayList<>()
         )).toList()
     );
   }

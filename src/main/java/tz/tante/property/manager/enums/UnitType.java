@@ -2,11 +2,9 @@ package tz.tante.property.manager.enums;
 
 public enum UnitType
 {
-  APARTMENT,
+  FLAT,
   HOUSE,
-  COMMERCIAL,
-  INDUSTRIAL,
-  LAND,
   ROOM,
-  OFFICE
+  OFFICE,
+  SHOP
 }

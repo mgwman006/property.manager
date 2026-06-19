@@ -41,6 +41,6 @@ public class Unit extends BaseEntity
   private  String sizeUnit;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "property_id")
-  private Property property;
+  @JoinColumn(name = "building_id")
+  private Building building;
 }

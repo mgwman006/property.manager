@@ -7,7 +7,6 @@ import java.util.List;
 public record PropertyDetailsDTO(
   Long id,
   String description,
-  Long managingOrganizationId,
   Long creatorId,
   String name,
   Long landSize,
@@ -18,6 +17,6 @@ public record PropertyDetailsDTO(
   String type,
   String developmentStatus,
   String status,
-  List<UnitDetailsDTO>units)
+  List<BuildingDetailsDTO> buildings)
 {
 }

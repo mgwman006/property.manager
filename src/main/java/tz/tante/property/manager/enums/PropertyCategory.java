@@ -7,5 +7,6 @@ public enum PropertyCategory
   LAND,
   STAND_ALONE_HOUSE,
   APARTMENTS_BUILDING,
-  COMPOUND
+  COMPOUND,
+  COMPLEX
 }
