@@ -13,7 +13,6 @@ import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.services.UnitService;
 
-
 @RestController
 @AllArgsConstructor
 @RequestMapping("/v1/units")
