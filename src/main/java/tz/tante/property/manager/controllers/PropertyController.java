@@ -2,6 +2,7 @@ package tz.tante.property.manager.controllers;
 
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class PropertyController
   private final PropertyService propertyService;
 
   @PostMapping
-  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@RequestBody PropertyCreateDTO request)
+  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@Valid @RequestBody PropertyCreateDTO request)
   {
     PropertyDetailsDTO response = propertyService.registerProperty(request);
 

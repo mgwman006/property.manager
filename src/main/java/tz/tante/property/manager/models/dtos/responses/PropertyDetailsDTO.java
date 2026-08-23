@@ -1,22 +1,15 @@
 package tz.tante.property.manager.models.dtos.responses;
 
-import tz.tante.property.manager.models.dtos.AddressDTO;
-
-import java.util.List;
 
 public record PropertyDetailsDTO(
   Long id,
+  String code,
   String description,
-  Long creatorId,
   String name,
-  Long landSize,
+  Double landSize,
   String landSizeUnit,
-  Double latitude,
-  Double longitude,
-  AddressDTO address,
   String type,
-  String developmentStatus,
-  String status,
-  List<BuildingDetailsDTO> buildings)
+  String developmentStatus
+)
 {
 }
