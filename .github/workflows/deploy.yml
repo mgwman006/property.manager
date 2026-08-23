@@ -3,7 +3,7 @@ name: Deploy to Tante EC2
 on:
   push:
     branches:
-      - develop
+      - dev
 
 jobs:
   deploy:
