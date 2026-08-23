@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import tz.tante.property.manager.enums.DevelopmentStatus;
 import tz.tante.property.manager.enums.PropertyCategory;
-import tz.tante.property.manager.enums.PropertyStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,27 +23,17 @@ public class Property extends BaseEntity
   @Column(length = 2000)
   private String description;
 
-  @Column(nullable = false)
-  private Long creatorId;
-
-  @Column(nullable = false)
   private String name;
 
   @Column(nullable = false, unique = true)
   private String code;
 
-  private Long landSize;
+  private Double landSize;
 
   private String landSizeUnit;
 
-  @Column(nullable = false)
-  private Double latitude;
-
-  @Column(nullable = false)
-  private Double longitude;
-
-  @Embedded
-  private Address address;
+  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "property")
+  private Location location;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
@@ -54,15 +43,18 @@ public class Property extends BaseEntity
   @Enumerated(EnumType.STRING)
   private DevelopmentStatus developmentStatus;
 
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  private PropertyStatus status;
-
   @OneToMany(
     mappedBy = "property",
     cascade = CascadeType.ALL,
     fetch = FetchType.LAZY
   )
   private List<Building> buildings = new ArrayList<>();
+
+  @OneToMany(
+    mappedBy = "property",
+    cascade = CascadeType.ALL,
+    fetch = FetchType.LAZY
+  )
+  private List<PropertyOwner> owners = new ArrayList<>();
 
 }

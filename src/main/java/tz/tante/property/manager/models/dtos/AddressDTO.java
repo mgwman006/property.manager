@@ -1,11 +1,15 @@
 package tz.tante.property.manager.models.dtos;
 
 public record AddressDTO(
-  String street,
+  long postalCode,
+  long streetNumber,
+  String streetName,
   String area,
   String city,
+  String ward,
   String region,
-  String country
+  String country,
+  String popularAreaName
 )
 {
 }
