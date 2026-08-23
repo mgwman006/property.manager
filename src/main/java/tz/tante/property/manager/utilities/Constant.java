@@ -14,5 +14,5 @@ public class Constant
   public static String RESOURCE_ALREADY_EXISTS_MESSAGE = "RESOURCE_ALREADY_EXISTS";
   public static String VERSION_CONFLICT_MESSAGE = "VERSION_CONFLICT";
   public static final String UNAUTHORIZED_MESSAGE = "UNAUTHORIZED";
-  public static final String PROPERTY_CODE_PREFIX = "PROP";
+  public static final String PROPERTY_CODE_PREFIX = "TPN";
 }

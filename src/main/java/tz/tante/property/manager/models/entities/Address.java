@@ -14,13 +14,19 @@ import lombok.Setter;
 @Embeddable
 public class Address
 {
-  private String street;
+  private long postalCode;
 
-  private String area;
+  private long streetNumber;
+
+  private String streetName;
+
+  private String ward;
 
   private String city;
 
   private String region;
 
   private String country;
+
+  private String popularAreaName;
 }

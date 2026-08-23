@@ -1,9 +1,9 @@
 package tz.tante.property.manager.configs.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,38 +27,68 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter
     this.authenticationEntryPoint = authenticationEntryPoint;
   }
 
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request)
+  {
+    String path = request.getServletPath();
+
+    return path.startsWith("/swagger-ui")
+      || path.startsWith("/v3/api-docs")
+      || path.equals("/swagger-ui.html");
+  }
 
   @Override
-  protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                  @NonNull HttpServletResponse response,
-                                  @NonNull FilterChain filterChain) throws IOException
+  protected void doFilterInternal(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  FilterChain filterChain) throws IOException
   {
+
     try
     {
+
       String authHeader = request.getHeader("Authorization");
-      if (authHeader != null && authHeader.startsWith("Bearer "))
+
+      if (authHeader == null || !authHeader.startsWith("Bearer "))
       {
-        String token = authHeader.substring(7);
-        if (!JwtUtils.isValidIssuer(token))
-        {
-          throw new AuthException("Invalid token issuer");
-        }
-      }
-      else
-      {
-        throw new AuthException("Invalid token");
+        authenticationEntryPoint.commence(
+          request,
+          response,
+          new BadCredentialsException("Missing Authorization token")
+        );
+        return;
       }
 
+      String token = authHeader.substring(7);
+
+      Claims claims = JwtUtils.getClaims(token);
+
+      // ✔ issuer validation
+      if (!JwtUtils.isValidIssuer(token)) {
+        throw new AuthException("Invalid issuer");
+      }
+
+      // ✔ create authentication
+      UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+          claims.getSubject(),
+          null,
+          List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+      auth.setDetails(
+        new WebAuthenticationDetailsSource().buildDetails(request)
+      );
+
+      SecurityContextHolder.getContext().setAuthentication(auth);
+
       filterChain.doFilter(request, response);
-    }
-    catch (Exception exception)
-    {
+
+    } catch (Exception ex) {
       authenticationEntryPoint.commence(
         request,
         response,
-        new BadCredentialsException(exception.getMessage(),exception)
+        new BadCredentialsException(ex.getMessage(), ex)
       );
     }
-
   }
 }

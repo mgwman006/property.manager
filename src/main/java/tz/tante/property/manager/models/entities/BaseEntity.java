@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -22,10 +23,16 @@ public abstract class BaseEntity
 
   private LocalDateTime updatedAt;
 
+  private Long createdByUserId;
+
+  private Long updatedByUserId;
+
+  private boolean isDeleted = false;
+
   @PrePersist
   protected void onCreate()
   {
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.now(ZoneId.of("UTC"));
     createdAt = now;
     updatedAt = now;
   }
@@ -33,6 +40,6 @@ public abstract class BaseEntity
   @PreUpdate
   protected void onUpdate()
   {
-    updatedAt = LocalDateTime.now();
+    updatedAt = LocalDateTime.now(ZoneId.of("UTC"));
   }
 }

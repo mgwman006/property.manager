@@ -2,10 +2,11 @@ package tz.tante.property.manager.enums;
 
 public enum PropertyCategory
 {
-  RESIDENTIAL,
-  COMMERCIAL,
   OFFICE,
   INDUSTRIAL,
   LAND,
-  MIXED_USE
+  STAND_ALONE_HOUSE,
+  APARTMENTS_BUILDING,
+  COMPOUND,
+  COMPLEX
 }
