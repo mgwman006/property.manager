@@ -5,10 +5,9 @@ import tz.tante.property.manager.models.dtos.AddressDTO;
 
 public record LocationCreateDTO(
   String name,
-  @NotNull(message = "Latitude is required")
   double latitude,
-  @NotNull(message = "Longitude is required")
   double longitude,
+  @NotNull(message = "Address is required")
   AddressDTO address)
 {
 }

@@ -22,11 +22,10 @@ public class PropertyController
 {
   private final PropertyService propertyService;
 
-  @PostMapping
-  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@Valid @RequestBody PropertyCreateDTO request)
+  @PostMapping("rental-profile/{rentalProfileId}")
+  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@PathVariable Long rentalProfileId, @Valid @RequestBody PropertyCreateDTO request)
   {
-    PropertyDetailsDTO response = propertyService.registerProperty(request);
-
+    PropertyDetailsDTO response = propertyService.registerPropertyByRentalProfileId(rentalProfileId, request);
     return ResponseEntity.status(HttpStatus.CREATED)
       .body(ApiResponse.success(response,HttpStatus.CREATED.value()));
   }

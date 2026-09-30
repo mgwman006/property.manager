@@ -5,8 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import tz.tante.property.manager.enums.DevelopmentStatus;
-import tz.tante.property.manager.enums.PropertyCategory;
-import tz.tante.property.manager.models.entities.PropertyOwner;
+import tz.tante.property.manager.enums.PropertyType;
 
 import java.util.List;
 
@@ -25,15 +24,15 @@ public record PropertyCreateDTO(
 
   String landSizeUnit,
 
-  @NotNull(message = "Location is required")
   LocationCreateDTO location,
 
   @NotNull(message = "Property category is required")
-  PropertyCategory type,
+  PropertyType type,
+
+  int numberOfBuildings,
 
   DevelopmentStatus developmentStatus,
 
-  @NotNull(message = "Property owners are required")
   List<PropertyOwnerDTO> owners
 
 )

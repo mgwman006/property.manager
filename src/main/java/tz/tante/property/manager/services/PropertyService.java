@@ -12,17 +12,14 @@ import lombok.Setter;
 
 import org.springframework.stereotype.Service;
 
+import tz.tante.property.manager.enums.PropertyType;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyOwnerDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
-import tz.tante.property.manager.models.entities.Address;
-import tz.tante.property.manager.models.entities.Location;
-import tz.tante.property.manager.models.entities.Property;
-import tz.tante.property.manager.models.entities.PropertyOwner;
-import tz.tante.property.manager.models.entities.PropertySequence;
+import tz.tante.property.manager.models.entities.*;
 import tz.tante.property.manager.repositories.PropertyRepository;
 import tz.tante.property.manager.repositories.PropertySequenceRepository;
 
@@ -38,16 +35,11 @@ public class PropertyService
   private final PropertySequenceRepository propertySequenceRepository;
 
   @Transactional
-  public PropertyDetailsDTO registerProperty(PropertyCreateDTO request)
+  public PropertyDetailsDTO registerPropertyByRentalProfileId(Long rentalProfileId, PropertyCreateDTO request)
   {
-    if (request.location() == null)
+    if (rentalProfileId == null || rentalProfileId <= 0)
     {
-      throw new TanteException("Property location is required");
-    }
-
-    if (request.owners() == null)
-    {
-      throw new TanteException("Property owners are required");
+      throw new TanteException("Rental profile ID is required and must be greater than 0");
     }
 
     int currentYear = LocalDateTime.now(UTC).getYear();
@@ -64,7 +56,6 @@ public class PropertyService
     location.setCreatedByUserId(request.createdByUserId());
     location.setProperty(property);
     property.setLocation(location);
-    property.setOwners(mapOwners(request, property));
 
     PropertySequence propertySequence = propertySequenceRepository.findForUpdate(currentYear)
       .orElseGet(() -> createSequence(currentYear));
@@ -72,6 +63,8 @@ public class PropertyService
     Long nextSequence = propertySequence.getLastSequence() + 1;
     propertySequence.setLastSequence(nextSequence);
     property.setCode(String.format("TNT-%d-%d", currentYear, nextSequence));
+
+    createBuildingsForProperty(property, request.numberOfBuildings(), request.type());
 
     Property savedProperty = propertyRepository.save(property);
     return mapToPropertyDetailsDTO(savedProperty);
@@ -90,6 +83,23 @@ public class PropertyService
   public List<PropertyDetailsDTO> getAllProperties()
   {
     return propertyRepository.findAll().stream().map(this::mapToPropertyDetailsDTO).toList();
+  }
+
+  private void createBuildingsForProperty(Property property, int numberOfBuildings, PropertyType propertyType)
+  {
+    if (numberOfBuildings <= 0)
+    {
+      throw new TanteException("Number of buildings must be greater than 0");
+    }
+
+    for (int i = 1; i <= numberOfBuildings; i++)
+    {
+      String buildingName = "Building " + i;
+      Building building = new Building();
+      building.setName(buildingName);
+      building.setCreatedByUserId(property.getCreatedByUserId());
+      property.addBuilding(building);
+    }
   }
 
   private Location mapToLocation(PropertyCreateDTO request)
