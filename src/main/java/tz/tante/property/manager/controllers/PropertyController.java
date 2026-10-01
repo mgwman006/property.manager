@@ -22,7 +22,7 @@ public class PropertyController
 {
   private final PropertyService propertyService;
 
-  @PostMapping("rental-profile/{rentalProfileId}")
+  @PostMapping("/rental-profile/{rentalProfileId}")
   public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@PathVariable Long rentalProfileId, @Valid @RequestBody PropertyCreateDTO request)
   {
     PropertyDetailsDTO response = propertyService.registerPropertyByRentalProfileId(rentalProfileId, request);
@@ -38,7 +38,7 @@ public class PropertyController
       .body(ApiResponse.success(response, HttpStatus.OK.value()));
   }
 
-  @GetMapping("{propertyId}")
+  @GetMapping("/{propertyId}")
   public ResponseEntity<ApiResponse<PropertyDetailsDTO>> getProperty(@PathVariable Long propertyId)
   {
     PropertyDetailsDTO response = propertyService.getPropertyDetailsById(propertyId);
