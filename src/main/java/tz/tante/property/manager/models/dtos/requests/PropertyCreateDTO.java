@@ -24,11 +24,13 @@ public record PropertyCreateDTO(
 
   String landSizeUnit,
 
+  @NotNull(message = "Location is required")
   LocationCreateDTO location,
 
   @NotNull(message = "Property category is required")
   PropertyType type,
 
+  @NotNull(message = "Number of buildings is required")
   int numberOfBuildings,
 
   DevelopmentStatus developmentStatus,

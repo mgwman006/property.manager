@@ -12,13 +12,17 @@ import lombok.Setter;
 
 import org.springframework.stereotype.Service;
 
+import tz.tante.property.manager.enums.PropertyRegister;
 import tz.tante.property.manager.enums.PropertyType;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyOwnerDTO;
+import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.LocationDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.models.entities.*;
 import tz.tante.property.manager.repositories.PropertyRepository;
 import tz.tante.property.manager.repositories.PropertySequenceRepository;
@@ -44,6 +48,8 @@ public class PropertyService
 
     int currentYear = LocalDateTime.now(UTC).getYear();
     Property property = new Property();
+    property.setRentalProfileId(rentalProfileId);
+    property.setRegisteredBy(PropertyRegister.RENTAL_PROFILE);
     property.setDescription(request.description());
     property.setCreatedByUserId(request.createdByUserId());
     property.setName(request.name());
@@ -58,13 +64,24 @@ public class PropertyService
     property.setLocation(location);
 
     PropertySequence propertySequence = propertySequenceRepository.findForUpdate(currentYear)
-      .orElseGet(() -> createSequence(currentYear));
+      .orElse(null);
+
+    if (propertySequence == null)
+    {
+      propertySequence = createSequence(currentYear);
+    }
 
     Long nextSequence = propertySequence.getLastSequence() + 1;
     propertySequence.setLastSequence(nextSequence);
-    property.setCode(String.format("TNT-%d-%d", currentYear, nextSequence));
+    property.setCode(String.format("TNT-%d-%06d", currentYear, nextSequence));
 
-    createBuildingsForProperty(property, request.numberOfBuildings(), request.type());
+    createBuildingsForProperty(property, request.numberOfBuildings());
+
+    if (request.owners() != null && !request.owners().isEmpty())
+    {
+      List<PropertyOwner> owners = mapOwners(request, property);
+      property.setOwners(owners);
+    }
 
     Property savedProperty = propertyRepository.save(property);
     return mapToPropertyDetailsDTO(savedProperty);
@@ -85,7 +102,7 @@ public class PropertyService
     return propertyRepository.findAll().stream().map(this::mapToPropertyDetailsDTO).toList();
   }
 
-  private void createBuildingsForProperty(Property property, int numberOfBuildings, PropertyType propertyType)
+  private void createBuildingsForProperty(Property property, int numberOfBuildings)
   {
     if (numberOfBuildings <= 0)
     {
@@ -126,7 +143,7 @@ public class PropertyService
       address.city(),
       address.region(),
       address.country(),
-      address.popularAreaName() == null ? address.area() : address.popularAreaName()
+      address.popularAreaName()
     );
   }
 
@@ -149,6 +166,12 @@ public class PropertyService
 
   private PropertyDetailsDTO mapToPropertyDetailsDTO(Property property)
   {
+    Location location = property.getLocation();
+    LocationDetailsDTO locationDetailsDTO = mapToLocationDetailsDTO(location);
+
+    List<Building> buildings = property.getBuildings();
+    List<BuildingDetailsDTO> buildingDetailsDTOs = mapToBuildingDetailsDTOs(buildings, property.getId());
+
     return new PropertyDetailsDTO(
       property.getId(),
       property.getCode(),
@@ -157,7 +180,9 @@ public class PropertyService
       property.getLandSize(),
       property.getLandSizeUnit(),
       property.getType() == null ? null : property.getType().toString(),
-      property.getDevelopmentStatus() == null ? null : property.getDevelopmentStatus().toString()
+      property.getDevelopmentStatus() == null ? null : property.getDevelopmentStatus().toString(),
+      locationDetailsDTO,
+      buildingDetailsDTOs
     );
   }
 
@@ -167,5 +192,93 @@ public class PropertyService
     sequence.setYear(year);
     sequence.setLastSequence(0L);
     return propertySequenceRepository.save(sequence);
+  }
+
+  private LocationDetailsDTO mapToLocationDetailsDTO(Location location)
+  {
+    if (location == null)
+    {
+      return null;
+    }
+
+    Address address = location.getAddress();
+    AddressDTO addressDTO = mapToAddressDTO(address);
+
+    return new LocationDetailsDTO(
+      location.getLatitude(),
+      location.getLongitude(),
+      addressDTO
+    );
+  }
+
+  private AddressDTO mapToAddressDTO(Address address)
+  {
+    if (address == null)
+    {
+      return null;
+    }
+
+    return new AddressDTO(
+      address.getPostalCode(),
+      address.getStreetNumber(),
+      address.getStreetName(),
+      address.getCity(),
+      address.getWard(),
+      address.getRegion(),
+      address.getCountry(),
+      address.getPopularAreaName()
+    );
+  }
+  private List<BuildingDetailsDTO> mapToBuildingDetailsDTOs(List<Building> buildings, Long propertyId)
+  {
+    List<BuildingDetailsDTO> buildingDetailsDTOs = new ArrayList<>();
+    for (Building building : buildings)
+    {
+      List<UnitDetailsDTO> unitDetailsDTOs = mapToUnitDetailsDTOs(building.getUnits(), building.getId());
+      BuildingDetailsDTO buildingDetailsDTO = new BuildingDetailsDTO(
+        building.getId(),
+        building.getCode(),
+        building.getName(),
+        building.getDescription(),
+        propertyId,
+        unitDetailsDTOs
+      );
+      buildingDetailsDTOs.add(buildingDetailsDTO);
+    }
+    return buildingDetailsDTOs;
+  }
+
+  private List<UnitDetailsDTO> mapToUnitDetailsDTOs(List<Unit> units, Long buildingId)
+  {
+    List<UnitDetailsDTO> unitDetailsDTOs = new ArrayList<>();
+    for (Unit unit : units)
+    {
+      UnitDetailsDTO unitDetailsDTO = mapToUnitDetailsDTO(unit, buildingId);
+      unitDetailsDTOs.add(unitDetailsDTO);
+    }
+    return unitDetailsDTOs;
+  }
+
+  private UnitDetailsDTO mapToUnitDetailsDTO(Unit unit, Long buildingId)
+  {
+    if (unit == null)
+    {
+      return null;
+    }
+
+    return new UnitDetailsDTO(
+      unit.getId(),
+      unit.getUnitNumber(),
+      unit.getRentalProfileId(),
+      unit.getNumberOfBedrooms(),
+      unit.getNumberOfBathrooms(),
+      unit.getNumberParkingSpots(),
+      unit.getRentAmount(),
+      unit.getType(),
+      unit.getStatus(),
+      unit.getSize(),
+      unit.getSizeUnit(),
+      buildingId
+    );
   }
 }
