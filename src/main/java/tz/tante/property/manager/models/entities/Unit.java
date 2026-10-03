@@ -14,8 +14,16 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-@Entity(name = "units")
-@Table(name = "units")
+@Entity
+@Table(
+  name = "units",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      name = "uk_unit_building_unit_number",
+      columnNames = {"building_id", "unit_number"}
+    )
+  }
+)
 public class Unit extends BaseEntity
 {
   private String unitNumber;
