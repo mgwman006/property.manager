@@ -35,6 +35,7 @@ public class SecurityFilterChainConfig
         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
       )
       .authorizeHttpRequests(auth -> auth
+        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
         .requestMatchers(
           "/v1/auth/**",
           "/swagger-ui/**",

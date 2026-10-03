@@ -36,7 +36,7 @@ public class Unit extends BaseEntity
   @Enumerated(EnumType.STRING)
   private UnitStatus status;
 
-  private Long size;
+  private Long roomSize;
 
   private  String sizeUnit;
 

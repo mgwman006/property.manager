@@ -142,9 +142,7 @@ public class PropertyService
       address.ward(),
       address.city(),
       address.region(),
-      address.country(),
-      address.popularAreaName()
-    );
+      address.country());
   }
 
   private List<PropertyOwner> mapOwners(PropertyCreateDTO request, Property property)
@@ -225,8 +223,7 @@ public class PropertyService
       address.getCity(),
       address.getWard(),
       address.getRegion(),
-      address.getCountry(),
-      address.getPopularAreaName()
+      address.getCountry()
     );
   }
   private List<BuildingDetailsDTO> mapToBuildingDetailsDTOs(List<Building> buildings, Long propertyId)
@@ -276,9 +273,15 @@ public class PropertyService
       unit.getRentAmount(),
       unit.getType(),
       unit.getStatus(),
-      unit.getSize(),
+      unit.getRoomSize(),
       unit.getSizeUnit(),
       buildingId
     );
+  }
+
+  public List<PropertyDetailsDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
+  {
+    List<Property> properties = propertyRepository.findByRentalProfileId(rentalProfileId);
+    return properties.stream().map(this::mapToPropertyDetailsDTO).toList();
   }
 }

@@ -45,4 +45,12 @@ public class PropertyController
     return ResponseEntity.status(HttpStatus.OK)
       .body(ApiResponse.success(response, HttpStatus.OK.value()));
   }
+
+  @GetMapping("/rental-profile/{rentalProfileId}")
+  public ResponseEntity<ApiResponse<List<PropertyDetailsDTO>>> getPropertiesByRentalProfileId(@PathVariable Long rentalProfileId)
+  {
+    List<PropertyDetailsDTO> response = propertyService.getPropertiesByRentalProfileId(rentalProfileId);
+    return ResponseEntity.status(HttpStatus.OK)
+      .body(ApiResponse.success(response, HttpStatus.OK.value()));
+  }
 }

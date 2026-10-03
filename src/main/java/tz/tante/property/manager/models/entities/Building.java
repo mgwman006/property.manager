@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,4 +35,9 @@ public class Building extends BaseEntity
   )
   private List<Unit> units = new ArrayList<>();
 
+  public void addUnit(Unit unit)
+  {
+    units.add(unit);
+    unit.setBuilding(this);
+  }
 }
