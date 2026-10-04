@@ -22,7 +22,6 @@ public class Building extends BaseEntity
   private String code;
   private String description;
   private int numberOfFloors;
-  private int numberOfUnits;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "property_id")

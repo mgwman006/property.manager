@@ -13,7 +13,6 @@ import lombok.Setter;
 import org.springframework.stereotype.Service;
 
 import tz.tante.property.manager.enums.PropertyRegister;
-import tz.tante.property.manager.enums.PropertyType;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
@@ -233,11 +232,13 @@ public class PropertyService
     {
       List<UnitDetailsDTO> unitDetailsDTOs = mapToUnitDetailsDTOs(building.getUnits(), building.getId());
       BuildingDetailsDTO buildingDetailsDTO = new BuildingDetailsDTO(
-        building.getId(),
-        building.getCode(),
-        building.getName(),
-        building.getDescription(),
         propertyId,
+        building.getId(),
+        building.getName(),
+        building.getNumber(),
+        building.getCode(),
+        building.getDescription(),
+        building.getNumberOfFloors(),
         unitDetailsDTOs
       );
       buildingDetailsDTOs.add(buildingDetailsDTO);
