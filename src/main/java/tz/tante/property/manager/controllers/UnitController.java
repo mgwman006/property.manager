@@ -33,4 +33,11 @@ public class UnitController
     return ResponseEntity.ok(ApiResponse.success(status, HttpStatus.OK.value()));
   }
 
+  @PatchMapping("/{unitId}/status")
+  public ResponseEntity<ApiResponse<UnitStatus>> updateUnitStatus(@PathVariable Long unitId, @RequestParam UnitStatus status)
+  {
+    UnitStatus updatedStatus = unitService.updateUnitStatus(unitId, status);
+    return ResponseEntity.ok(ApiResponse.success(updatedStatus, HttpStatus.OK.value()));
+  }
+
 }

@@ -66,4 +66,13 @@ public class UnitService
       unit.getSizeUnit(),
       null);
   }
+
+  public UnitStatus updateUnitStatus(Long unitId, UnitStatus status)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+    unit.setStatus(status);
+    unit = unitRepository.save(unit);
+    return unit.getStatus();
+  }
 }
