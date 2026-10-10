@@ -48,26 +48,4 @@ public class JwtUtils
       .getBody();
   }
 
-  public boolean validateToken(String token) {
-    try {
-      getClaims(token);
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
-  }
-
-  public String getUserName(String token) {
-    return getClaims(token).getSubject();
-  }
-
-  @SuppressWarnings("unchecked")
-  public Set<String> getRolesFromToken(String token) {
-    Claims claims = getClaims(token);
-    Object roles = claims.get("roles");
-    if (roles == null) {
-      return new HashSet<>();
-    }
-    return new HashSet<>(((java.util.List<String>) claims.get("roles")));
-  }
 }
