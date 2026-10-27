@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import tz.tante.property.manager.enums.DevelopmentStatus;
-import tz.tante.property.manager.enums.PropertyCategory;
+import tz.tante.property.manager.enums.PropertyRegister;
+import tz.tante.property.manager.enums.PropertyType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,8 @@ import java.util.List;
 @Table(name = "properties")
 public class Property extends BaseEntity
 {
+  private Long rentalProfileId;
+
   @Column(length = 2000)
   private String description;
 
@@ -32,12 +35,16 @@ public class Property extends BaseEntity
 
   private String landSizeUnit;
 
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private PropertyRegister registeredBy;
+
   @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "property")
   private Location location;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  private PropertyCategory type;
+  private PropertyType type;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
@@ -56,5 +63,10 @@ public class Property extends BaseEntity
     fetch = FetchType.LAZY
   )
   private List<PropertyOwner> owners = new ArrayList<>();
+
+  public void addBuilding(Building building) {
+    buildings.add(building);
+    building.setProperty(this);
+  }
 
 }

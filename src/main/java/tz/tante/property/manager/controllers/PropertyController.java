@@ -22,11 +22,10 @@ public class PropertyController
 {
   private final PropertyService propertyService;
 
-  @PostMapping
-  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@Valid @RequestBody PropertyCreateDTO request)
+  @PostMapping("/rental-profile/{rentalProfileId}")
+  public ResponseEntity<ApiResponse<PropertyDetailsDTO>> registerProperty(@PathVariable Long rentalProfileId, @Valid @RequestBody PropertyCreateDTO request)
   {
-    PropertyDetailsDTO response = propertyService.registerProperty(request);
-
+    PropertyDetailsDTO response = propertyService.registerPropertyByRentalProfileId(rentalProfileId, request);
     return ResponseEntity.status(HttpStatus.CREATED)
       .body(ApiResponse.success(response,HttpStatus.CREATED.value()));
   }
@@ -39,10 +38,18 @@ public class PropertyController
       .body(ApiResponse.success(response, HttpStatus.OK.value()));
   }
 
-  @GetMapping("{propertyId}")
+  @GetMapping("/{propertyId}")
   public ResponseEntity<ApiResponse<PropertyDetailsDTO>> getProperty(@PathVariable Long propertyId)
   {
     PropertyDetailsDTO response = propertyService.getPropertyDetailsById(propertyId);
+    return ResponseEntity.status(HttpStatus.OK)
+      .body(ApiResponse.success(response, HttpStatus.OK.value()));
+  }
+
+  @GetMapping("/rental-profile/{rentalProfileId}")
+  public ResponseEntity<ApiResponse<List<PropertyDetailsDTO>>> getPropertiesByRentalProfileId(@PathVariable Long rentalProfileId)
+  {
+    List<PropertyDetailsDTO> response = propertyService.getPropertiesByRentalProfileId(rentalProfileId);
     return ResponseEntity.status(HttpStatus.OK)
       .body(ApiResponse.success(response, HttpStatus.OK.value()));
   }

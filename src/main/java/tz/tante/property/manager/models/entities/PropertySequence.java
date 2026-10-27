@@ -16,8 +16,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class PropertySequence extends BaseEntity
 {
-  @Column(nullable = false)
-  private Integer year;
+  @Column(nullable = false, unique = true)
+  private int year;
 
   @Column(name = "last_sequence", nullable = false)
   private Long lastSequence = 0L;
