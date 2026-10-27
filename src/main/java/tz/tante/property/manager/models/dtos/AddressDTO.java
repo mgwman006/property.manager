@@ -4,12 +4,9 @@ public record AddressDTO(
   long postalCode,
   long streetNumber,
   String streetName,
-  String area,
-  String city,
   String ward,
+  String city,
   String region,
-  String country,
-  String popularAreaName
-)
+  String country)
 {
 }

@@ -14,8 +14,16 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-@Entity(name = "units")
-@Table(name = "units")
+@Entity
+@Table(
+  name = "units",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      name = "uk_unit_building_unit_number",
+      columnNames = {"building_id", "unit_number"}
+    )
+  }
+)
 public class Unit extends BaseEntity
 {
   private String unitNumber;
@@ -36,7 +44,7 @@ public class Unit extends BaseEntity
   @Enumerated(EnumType.STRING)
   private UnitStatus status;
 
-  private Long size;
+  private Long roomSize;
 
   private  String sizeUnit;
 

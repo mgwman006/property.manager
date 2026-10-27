@@ -1,0 +1,80 @@
+name: Prod Environment - Deploy Property Manager
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: PROD
+
+    env:
+      DB_URL: ${{ secrets.DB_URL }}
+      DB_USERNAME: ${{ secrets.PROPERTY_MANAGER_DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.PROPERTY_MANAGER_DB_PASSWORD }}
+      SERVER_PORT: 8082
+      AUTH_ISSUER_URI: ${{ secrets.AUTH_ISSUER_URI }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker buildx build --platform linux/amd64 -t property-manager:prod --load .
+
+      - name: Save Docker image as tar
+        run: docker save property-manager:prod | gzip > property-manager.tar.gz
+
+      - name: Copy image to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.PROPERTY_MANAGER_SERVER_HOST_IP }}
+          username: ${{ secrets.PROPERTY_MANAGER_SERVER_USERNAME }}
+          key: ${{ secrets.PROPERTY_MANAGER_SERVER_PRIVATE_KEY }}
+          source: "property-manager.tar.gz"
+          target: "/home/ubuntu/property-manager"
+
+      - name: Deploy on EC2
+        run: |
+          echo "${{ secrets.PROPERTY_MANAGER_SERVER_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+          ssh -o StrictHostKeyChecking=no -i private_key \
+          ${{ secrets.PROPERTY_MANAGER_SERVER_USERNAME }}@${{ secrets.PROPERTY_MANAGER_SERVER_HOST_IP }} \
+          "DB_URL='${{ secrets.DB_URL }}' \
+           DB_USERNAME='${{ secrets.PROPERTY_MANAGER_DB_USERNAME }}' \
+           DB_PASSWORD='${{ secrets.PROPERTY_MANAGER_DB_PASSWORD }}' \
+           AUTH_ISSUER_URI='${{ secrets.AUTH_ISSUER_URI }}' \
+           bash -s" << 'EOF'
+
+          set -e
+
+          cd /home/ubuntu/property-manager
+
+          echo "Stopping old container..."
+          sudo docker stop property-manager || true
+          sudo docker rm property-manager || true
+
+          echo "Loading new image..."
+          gunzip -c property-manager.tar.gz | sudo docker load
+
+          echo "Starting new container..."
+          sudo docker run -d \
+            --name property-manager \
+            --restart always \
+            -p 8082:8082 \
+            -e DB_URL="$DB_URL" \
+            -e DB_USERNAME="$DB_USERNAME" \
+            -e DB_PASSWORD="$DB_PASSWORD" \
+            -e AUTH_ISSUER_URI="$AUTH_ISSUER_URI" \
+            property-manager:prod
+
+          EOF
+
+          rm private_key
+
