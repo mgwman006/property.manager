@@ -3,7 +3,7 @@ name: Deploy Property Manager to Dev Environment
 on:
   push:
     branches:
-      - dev
+      - dev-1
 
 jobs:
   deploy:
