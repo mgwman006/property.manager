@@ -36,3 +36,12 @@ app:
     allowed-headers: Authorization,Content-Type,Accept,Origin
     exposed-headers: Authorization
     allow-credentials: true
+  storage:
+    s3:
+      bucket: ${AWS_S3_BUCKET:property-manager-images}
+      region: ${AWS_REGION:us-east-1}
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+      endpoint: ""
+      public-url-base: ""
+      folder: ${AWS_S3_FOLDER:properties}

@@ -64,9 +64,22 @@ public class Property extends BaseEntity
   )
   private List<PropertyOwner> owners = new ArrayList<>();
 
+  @OneToMany(
+    mappedBy = "property",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true,
+    fetch = FetchType.LAZY
+  )
+  private List<PropertyImage> images = new ArrayList<>();
+
   public void addBuilding(Building building) {
     buildings.add(building);
     building.setProperty(this);
+  }
+
+  public void addImage(PropertyImage image) {
+    images.add(image);
+    image.setProperty(this);
   }
 
 }
