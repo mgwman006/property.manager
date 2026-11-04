@@ -3,14 +3,22 @@ package tz.tante.property.manager.services;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
+import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
 import tz.tante.property.manager.models.entities.Building;
 import tz.tante.property.manager.models.entities.Unit;
+import tz.tante.property.manager.models.entities.UnitImage;
 import tz.tante.property.manager.repositories.BuildingRepository;
+import tz.tante.property.manager.repositories.UnitImageRepository;
 import tz.tante.property.manager.repositories.UnitRepository;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -18,6 +26,8 @@ public class UnitService
 {
   private final UnitRepository unitRepository;
   private final BuildingRepository buildingRepository;
+  private final UnitImageRepository unitImageRepository;
+  private final S3StorageService s3StorageService;
 
   @Transactional
   public UnitDetailsDTO createUnit(Long buildingId, UnitCreateDTO request)
