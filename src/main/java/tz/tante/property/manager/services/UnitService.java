@@ -1,13 +1,21 @@
 package tz.tante.property.manager.services;
 
+import jakarta.persistence.criteria.JoinType;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import tz.tante.property.manager.enums.UnitStatus;
+import tz.tante.property.manager.enums.UnitType;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
+import tz.tante.property.manager.models.dtos.responses.ListedUnitsPageDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
 import tz.tante.property.manager.models.entities.Building;
@@ -17,6 +25,7 @@ import tz.tante.property.manager.repositories.BuildingRepository;
 import tz.tante.property.manager.repositories.UnitImageRepository;
 import tz.tante.property.manager.repositories.UnitRepository;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +37,287 @@ public class UnitService
   private final BuildingRepository buildingRepository;
   private final UnitImageRepository unitImageRepository;
   private final S3StorageService s3StorageService;
+
+  @Transactional(readOnly = true)
+  public ListedUnitsPageDTO getListedUnits(
+    Integer page,
+    Integer size,
+    String sortBy,
+    String direction,
+    Boolean listed,
+    Long buildingId,
+    Long rentalProfileId,
+    UnitType type,
+    UnitStatus status,
+    String city,
+    String region,
+    String ward,
+    String streetName,
+    String country,
+    Integer minBedrooms,
+    Integer maxBedrooms,
+    Integer minBathrooms,
+    Integer maxBathrooms,
+    BigDecimal minRent,
+    BigDecimal maxRent,
+    String query
+  )
+  {
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 20 : Math.max(Math.min(size, 100), 1);
+    String safeSortBy = resolveSortField(sortBy);
+    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
+
+    boolean safeListed = listed == null || listed;
+    Specification<Unit> specification = Specification.where((root, criteriaQuery, criteriaBuilder) ->
+      criteriaBuilder.equal(root.get("listed"), safeListed)
+    );
+
+    if (buildingId != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("building").get("id"), buildingId)
+      );
+    }
+
+    if (rentalProfileId != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("rentalProfileId"), rentalProfileId)
+      );
+    }
+
+    if (type != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("type"), type)
+      );
+    }
+
+    if (status != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("status"), status)
+      );
+    }
+
+    if (city != null && !city.isBlank())
+    {
+      String cityFilter = city.trim();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("city")), "%" + cityFilter.toLowerCase() + "%");
+      });
+    }
+
+    if (region != null && !region.isBlank())
+    {
+      String regionFilter = region.trim();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("region")), "%" + regionFilter.toLowerCase() + "%");
+      });
+    }
+
+    if (ward != null && !ward.isBlank())
+    {
+      String wardFilter = ward.trim();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("ward")), "%" + wardFilter.toLowerCase() + "%");
+      });
+    }
+
+    if (streetName != null && !streetName.isBlank())
+    {
+      String streetNameFilter = streetName.trim();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("streetName")), "%" + streetNameFilter.toLowerCase() + "%");
+      });
+    }
+
+    if (country != null && !country.isBlank())
+    {
+      String countryFilter = country.trim();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("country")), "%" + countryFilter.toLowerCase() + "%");
+      });
+    }
+
+    if (minBedrooms != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.greaterThanOrEqualTo(root.get("numberOfBedrooms"), minBedrooms)
+      );
+    }
+
+    if (maxBedrooms != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.lessThanOrEqualTo(root.get("numberOfBedrooms"), maxBedrooms)
+      );
+    }
+
+    if (minBathrooms != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.greaterThanOrEqualTo(root.get("numberOfBathrooms"), minBathrooms)
+      );
+    }
+
+    if (maxBathrooms != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.lessThanOrEqualTo(root.get("numberOfBathrooms"), maxBathrooms)
+      );
+    }
+
+    if (minRent != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.greaterThanOrEqualTo(root.get("rentAmount"), minRent)
+      );
+    }
+
+    if (maxRent != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.lessThanOrEqualTo(root.get("rentAmount"), maxRent)
+      );
+    }
+
+    if (query != null && !query.isBlank())
+    {
+      String normalized = query.trim();
+      String lowerQuery = normalized.toLowerCase();
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+        var buildingJoin = root.join("building", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        return criteriaBuilder.or(
+          criteriaBuilder.like(criteriaBuilder.lower(root.get("unitNumber")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(buildingJoin.get("code")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(buildingJoin.get("name")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(propertyJoin.get("name")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("city")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("region")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("ward")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("streetName")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("country")), "%" + lowerQuery + "%")
+        );
+      });
+    }
+
+    Page<Unit> result = unitRepository.findAll(specification, pageable);
+    return new ListedUnitsPageDTO(
+      result.getContent().stream().map(this::mapToUnitDetailsDTO).toList(),
+      result.getNumber(),
+      result.getSize(),
+      result.getTotalElements(),
+      result.getTotalPages(),
+      result.hasNext(),
+      result.hasPrevious()
+    );
+  }
+
+  @Transactional(readOnly = true)
+  public ListedUnitsPageDTO getNearbyUnits(
+    Integer page,
+    Integer size,
+    String sortBy,
+    String direction,
+    Boolean listed,
+    Double latitude,
+    Double longitude,
+    Double radiusKm
+  )
+  {
+    if (latitude == null || longitude == null || radiusKm == null)
+    {
+      throw new TanteException("latitude, longitude, and radiusKm are required for nearby unit search");
+    }
+
+    if (latitude < -90 || latitude > 90)
+    {
+      throw new TanteException("latitude must be between -90 and 90");
+    }
+
+    if (longitude < -180 || longitude > 180)
+    {
+      throw new TanteException("longitude must be between -180 and 180");
+    }
+
+    if (radiusKm <= 0)
+    {
+      throw new TanteException("radiusKm must be greater than 0");
+    }
+
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 20 : Math.max(Math.min(size, 100), 1);
+    String safeSortBy = resolveSortField(sortBy);
+    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
+
+    boolean safeListed = listed == null || listed;
+    Specification<Unit> specification = Specification.where((root, criteriaQuery, criteriaBuilder) ->
+      criteriaBuilder.equal(root.get("listed"), safeListed)
+    );
+
+    double latDelta = radiusKm / 111.0;
+    double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
+
+    specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
+      var buildingJoin = root.join("building", JoinType.LEFT);
+      var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
+      var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+
+      return criteriaBuilder.and(
+        criteriaBuilder.greaterThanOrEqualTo(locationJoin.get("latitude"), latitude - latDelta),
+        criteriaBuilder.lessThanOrEqualTo(locationJoin.get("latitude"), latitude + latDelta),
+        criteriaBuilder.greaterThanOrEqualTo(locationJoin.get("longitude"), longitude - lngDelta),
+        criteriaBuilder.lessThanOrEqualTo(locationJoin.get("longitude"), longitude + lngDelta)
+      );
+    });
+
+    Page<Unit> result = unitRepository.findAll(specification, pageable);
+    List<Unit> filteredResults = result.getContent().stream()
+      .filter(unit -> unit.getBuilding() != null && unit.getBuilding().getProperty() != null && unit.getBuilding().getProperty().getLocation() != null)
+      .filter(unit -> haversineDistanceKm(
+        unit.getBuilding().getProperty().getLocation().getLatitude(),
+        unit.getBuilding().getProperty().getLocation().getLongitude(),
+        latitude,
+        longitude
+      ) <= radiusKm)
+      .toList();
+
+    long totalElements = filteredResults.size();
+    int totalPages = filteredResults.isEmpty() ? 1 : (int) Math.ceil((double) totalElements / safeSize);
+    boolean hasNext = safePage + 1 < totalPages;
+    boolean hasPrevious = safePage > 0;
+
+    return new ListedUnitsPageDTO(
+      filteredResults.stream().map(this::mapToUnitDetailsDTO).toList(),
+      safePage,
+      safeSize,
+      totalElements,
+      totalPages,
+      hasNext,
+      hasPrevious
+    );
+  }
 
   @Transactional
   public UnitDetailsDTO createUnit(Long buildingId, UnitCreateDTO request)
@@ -158,5 +448,38 @@ public class UnitService
     unit.setStatus(status);
     unit = unitRepository.save(unit);
     return unit.getStatus();
+  }
+
+  private double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2)
+  {
+    double earthRadiusKm = 6371.0;
+    double deltaLat = Math.toRadians(lat2 - lat1);
+    double deltaLon = Math.toRadians(lon2 - lon1);
+    double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
+      + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+      * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  }
+
+  private String resolveSortField(String sortBy)
+  {
+    if (sortBy == null || sortBy.isBlank())
+    {
+      return "rentAmount";
+    }
+
+    return switch (sortBy.trim())
+    {
+      case "unitNumber" -> "unitNumber";
+      case "numberOfBedrooms" -> "numberOfBedrooms";
+      case "numberOfBathrooms" -> "numberOfBathrooms";
+      case "rentAmount" -> "rentAmount";
+      case "status" -> "status";
+      case "type" -> "type";
+      case "createdAt" -> "createdAt";
+      case "updatedAt" -> "updatedAt";
+      default -> "rentAmount";
+    };
   }
 }
