@@ -13,7 +13,8 @@ public record PropertyDetailsDTO(
   String type,
   String developmentStatus,
   LocationDetailsDTO location,
-  List<BuildingDetailsDTO> buildings
+  List<BuildingDetailsDTO> buildings,
+  List<PropertyImageDTO> images
 )
 {
 }

@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import tz.tante.property.manager.enums.PropertyRegister;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
@@ -21,8 +22,11 @@ import tz.tante.property.manager.models.dtos.requests.PropertyOwnerDTO;
 import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.LocationDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.PropertyImageDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
 import tz.tante.property.manager.models.entities.*;
+import tz.tante.property.manager.repositories.PropertyImageRepository;
 import tz.tante.property.manager.repositories.PropertyRepository;
 import tz.tante.property.manager.repositories.PropertySequenceRepository;
 
@@ -36,6 +40,8 @@ public class PropertyService
 
   private final PropertyRepository propertyRepository;
   private final PropertySequenceRepository propertySequenceRepository;
+  private final PropertyImageRepository propertyImageRepository;
+  private final S3StorageService s3StorageService;
 
   @Transactional
   public PropertyDetailsDTO registerPropertyByRentalProfileId(Long rentalProfileId, PropertyCreateDTO request)
@@ -96,9 +102,64 @@ public class PropertyService
   }
 
   @Transactional
+  public PropertyImageDTO uploadPropertyImage(Long propertyId, MultipartFile file, Long createdByUserId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+
+    S3StorageService.StoredImage storedImage = s3StorageService.uploadFile(file, property.getCode());
+
+    PropertyImage image = new PropertyImage();
+    image.setObjectKey(storedImage.objectKey());
+    image.setUrl(storedImage.url());
+    image.setFileName(storedImage.fileName());
+    image.setContentType(storedImage.contentType());
+    image.setSize(storedImage.size());
+    image.setCreatedByUserId(createdByUserId);
+    image.setPrimaryImage(property.getImages().isEmpty());
+    property.addImage(image);
+
+    PropertyImage savedImage = propertyImageRepository.save(image);
+    return mapToPropertyImageDTO(savedImage);
+  }
+
+  @Transactional
+  public List<PropertyImageDTO> getPropertyImages(Long propertyId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+
+    return property.getImages().stream()
+      .map(this::mapToPropertyImageDTO)
+      .toList();
+  }
+
+  @Transactional
+  public void deletePropertyImage(Long propertyId, Long imageId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+
+    PropertyImage image = propertyImageRepository.findById(imageId)
+      .orElseThrow(() -> new ResourceNotFoundException("Property image with id " + imageId + " not found"));
+
+    if (!image.getProperty().getId().equals(property.getId()))
+    {
+      throw new TanteException("Property image does not belong to this property");
+    }
+
+    property.getImages().remove(image);
+    s3StorageService.deleteFile(image.getObjectKey());
+    propertyImageRepository.delete(image);
+  }
+
+  @Transactional
   public List<PropertyDetailsDTO> getAllProperties()
   {
-    return propertyRepository.findAll().stream().map(this::mapToPropertyDetailsDTO).toList();
+    return propertyRepository.findAll()
+      .stream()
+      .map(this::mapToPropertyDetailsDTO)
+      .toList();
   }
 
   private void createBuildingsForProperty(Property property, int numberOfBuildings)
@@ -169,6 +230,10 @@ public class PropertyService
     List<Building> buildings = property.getBuildings();
     List<BuildingDetailsDTO> buildingDetailsDTOs = mapToBuildingDetailsDTOs(buildings, property.getId());
 
+    List<PropertyImageDTO> imageDTOs = property.getImages() == null
+      ? new ArrayList<>()
+      : property.getImages().stream().map(this::mapToPropertyImageDTO).toList();
+
     return new PropertyDetailsDTO(
       property.getId(),
       property.getCode(),
@@ -179,7 +244,25 @@ public class PropertyService
       property.getType() == null ? null : property.getType().toString(),
       property.getDevelopmentStatus() == null ? null : property.getDevelopmentStatus().toString(),
       locationDetailsDTO,
-      buildingDetailsDTOs
+      buildingDetailsDTOs,
+      imageDTOs
+    );
+  }
+
+  private PropertyImageDTO mapToPropertyImageDTO(PropertyImage image)
+  {
+    if (image == null)
+    {
+      return null;
+    }
+
+    return new PropertyImageDTO(
+      image.getId(),
+      image.getUrl(),
+      image.getFileName(),
+      image.getContentType(),
+      image.getSize(),
+      image.isPrimaryImage()
     );
   }
 
@@ -264,6 +347,10 @@ public class PropertyService
       return null;
     }
 
+    List<UnitImageDTO> imageDTOs = unit.getImages() == null
+      ? new ArrayList<>()
+      : unit.getImages().stream().map(this::mapToUnitImageDTO).toList();
+
     return new UnitDetailsDTO(
       unit.getId(),
       unit.getUnitNumber(),
@@ -276,7 +363,25 @@ public class PropertyService
       unit.getStatus(),
       unit.getRoomSize(),
       unit.getSizeUnit(),
-      buildingId
+      buildingId,
+      imageDTOs
+    );
+  }
+
+  private UnitImageDTO mapToUnitImageDTO(UnitImage image)
+  {
+    if (image == null)
+    {
+      return null;
+    }
+
+    return new UnitImageDTO(
+      image.getId(),
+      image.getUrl(),
+      image.getFileName(),
+      image.getContentType(),
+      image.getSize(),
+      image.isPrimaryImage()
     );
   }
 

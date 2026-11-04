@@ -50,8 +50,64 @@ public class UnitService
     return unit.getStatus();
   }
 
+  @Transactional
+  public UnitImageDTO uploadUnitImage(Long unitId, MultipartFile file, Long createdByUserId)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+
+    S3StorageService.StoredImage storedImage = s3StorageService.uploadFile(file, "units/" + unitId);
+
+    UnitImage image = new UnitImage();
+    image.setObjectKey(storedImage.objectKey());
+    image.setUrl(storedImage.url());
+    image.setFileName(storedImage.fileName());
+    image.setContentType(storedImage.contentType());
+    image.setSize(storedImage.size());
+    image.setCreatedByUserId(createdByUserId);
+    image.setPrimaryImage(unit.getImages().isEmpty());
+    unit.addImage(image);
+
+    UnitImage savedImage = unitImageRepository.save(image);
+    return mapToUnitImageDTO(savedImage);
+  }
+
+  @Transactional
+  public List<UnitImageDTO> getUnitImages(Long unitId)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+
+    return unit.getImages().stream()
+      .map(this::mapToUnitImageDTO)
+      .toList();
+  }
+
+  @Transactional
+  public void deleteUnitImage(Long unitId, Long imageId)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+
+    UnitImage image = unitImageRepository.findById(imageId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit image with ID " + imageId + " not found"));
+
+    if (!image.getUnit().getId().equals(unit.getId()))
+    {
+      throw new TanteException("Unit image does not belong to this unit");
+    }
+
+    unit.getImages().remove(image);
+    s3StorageService.deleteFile(image.getObjectKey());
+    unitImageRepository.delete(image);
+  }
+
   private UnitDetailsDTO mapToUnitDetailsDTO(Unit unit)
   {
+    List<UnitImageDTO> imageDTOs = unit.getImages() == null
+      ? new ArrayList<>()
+      : unit.getImages().stream().map(this::mapToUnitImageDTO).toList();
+
     return new UnitDetailsDTO(
       unit.getId(),
       unit.getUnitNumber(),
@@ -64,7 +120,25 @@ public class UnitService
       unit.getStatus(),
       unit.getRoomSize(),
       unit.getSizeUnit(),
-      null);
+      unit.getBuilding() == null ? null : unit.getBuilding().getId(),
+      imageDTOs);
+  }
+
+  private UnitImageDTO mapToUnitImageDTO(UnitImage image)
+  {
+    if (image == null)
+    {
+      return null;
+    }
+
+    return new UnitImageDTO(
+      image.getId(),
+      image.getUrl(),
+      image.getFileName(),
+      image.getContentType(),
+      image.getSize(),
+      image.isPrimaryImage()
+    );
   }
 
   public UnitStatus updateUnitStatus(Long unitId, UnitStatus status)

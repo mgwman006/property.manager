@@ -6,6 +6,7 @@ import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Schema(description = "Data Transfer Object representing the details of a unit within a property management system.")
 public record UnitDetailsDTO(
@@ -20,6 +21,7 @@ public record UnitDetailsDTO(
   UnitStatus status,
   Long size,
   String sizeUnit,
-  Long buildingId)
+  Long buildingId,
+  List<UnitImageDTO> images)
 {
 }

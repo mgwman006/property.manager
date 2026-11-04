@@ -11,6 +11,8 @@ import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -51,4 +53,17 @@ public class Unit extends BaseEntity
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "building_id")
   private Building building;
+
+  @OneToMany(
+    mappedBy = "unit",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true,
+    fetch = FetchType.LAZY
+  )
+  private List<UnitImage> images = new ArrayList<>();
+
+  public void addImage(UnitImage image) {
+    images.add(image);
+    image.setUnit(this);
+  }
 }
