@@ -363,6 +363,7 @@ public class PropertyService
       unit.getStatus(),
       unit.getRoomSize(),
       unit.getSizeUnit(),
+      unit.isListed(),
       buildingId,
       imageDTOs
     );

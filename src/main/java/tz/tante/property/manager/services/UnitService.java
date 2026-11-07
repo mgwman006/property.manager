@@ -425,6 +425,7 @@ public class UnitService
       unit.getStatus(),
       unit.getRoomSize(),
       unit.getSizeUnit(),
+      unit.isListed(),
       unit.getBuilding() == null ? null : unit.getBuilding().getId(),
       imageDTOs);
   }

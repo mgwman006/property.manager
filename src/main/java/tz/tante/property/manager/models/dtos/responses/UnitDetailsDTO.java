@@ -21,6 +21,7 @@ public record UnitDetailsDTO(
   UnitStatus status,
   Long size,
   String sizeUnit,
+  boolean isListed,
   Long buildingId,
   List<UnitImageDTO> images)
 {

@@ -127,7 +127,7 @@ public class UnitController
   }
 
   @PatchMapping("/{unitId}/listing/status")
-  public ResponseEntity<ApiResponse<Boolean>> updateUnitListingStatus(@PathVariable Long unitId, @RequestParam UnitListingUpdateDTO request)
+  public ResponseEntity<ApiResponse<Boolean>> updateUnitListingStatus(@PathVariable Long unitId, @RequestBody UnitListingUpdateDTO request)
   {
     Boolean isListed = unitService.updateUnitListingStatus(unitId, request.isListed());
     return ResponseEntity.ok(ApiResponse.success(isListed, HttpStatus.OK.value()));
