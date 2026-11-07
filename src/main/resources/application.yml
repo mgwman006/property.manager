@@ -31,7 +31,7 @@ server:
 
 app:
   cors:
-    allowed-origins: https://www.landlord.tante.tz,http://localhost:8080,http://localhost:4173,http://192.168.1.81:4173,http://localhost:4173,http://localhost:4175
+    allowed-origins: http://localhost:4178,https://www.landlord.tante.tz,http://localhost:8080,http://localhost:4173,http://192.168.1.81:4173,http://localhost:4173,http://localhost:4175
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
     allowed-headers: Authorization,Content-Type,Accept,Origin
     exposed-headers: Authorization

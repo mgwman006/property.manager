@@ -1,7 +1,11 @@
 package tz.tante.property.manager.services;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +31,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,6 +104,58 @@ class UnitServiceTest
     assertEquals(1L, result.totalElements());
     assertEquals("A-101", result.items().getFirst().unitNumber());
     verify(unitRepository).findAll(any(Specification.class), any(Pageable.class));
+  }
+
+  @Test
+  void shouldIncludeUnlistedUnitsWhenListingFilterIsNotProvided()
+  {
+    Unit unlistedUnit = new Unit();
+    unlistedUnit.setId(3L);
+    unlistedUnit.setListed(false);
+    unlistedUnit.setUnitNumber("3");
+    unlistedUnit.setRentalProfileId(2L);
+    unlistedUnit.setRentAmount(new BigDecimal("100000.00"));
+    unlistedUnit.setType(UnitType.FLAT);
+    unlistedUnit.setRoomSize(299L);
+    unlistedUnit.setSizeUnit("square meter");
+
+    Page<Unit> unitsPage = new PageImpl<>(List.of(unlistedUnit), PageRequest.of(0, 12), 1);
+    when(unitRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(unitsPage);
+
+    ListedUnitsPageDTO result = unitService.getListedUnits(
+      0,
+      12,
+      "rentAmount",
+      "asc",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
+
+    assertEquals(1, result.items().size());
+    assertEquals("3", result.items().getFirst().unitNumber());
+
+    ArgumentCaptor<Specification<Unit>> specification = ArgumentCaptor.forClass(Specification.class);
+    verify(unitRepository).findAll(specification.capture(), any(Pageable.class));
+    Root<Unit> root = mock();
+    CriteriaQuery<?> criteriaQuery = mock();
+    CriteriaBuilder criteriaBuilder = mock();
+    specification.getValue().toPredicate(root, criteriaQuery, criteriaBuilder);
+    verify(root, never()).get("listed");
   }
 
   @Test

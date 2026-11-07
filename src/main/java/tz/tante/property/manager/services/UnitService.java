@@ -69,10 +69,15 @@ public class UnitService
     Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
 
-    boolean safeListed = listed == null || listed;
-    Specification<Unit> specification = Specification.where((root, criteriaQuery, criteriaBuilder) ->
-      criteriaBuilder.equal(root.get("listed"), safeListed)
-    );
+    Specification<Unit> specification = (root, criteriaQuery, criteriaBuilder) ->
+      criteriaBuilder.conjunction();
+
+    if (listed != null)
+    {
+      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("listed"), listed)
+      );
+    }
 
     if (buildingId != null)
     {
@@ -448,6 +453,16 @@ public class UnitService
     unit.setStatus(status);
     unit = unitRepository.save(unit);
     return unit.getStatus();
+  }
+
+  @Transactional
+  public Boolean updateUnitListed(Long unitId, Boolean listed)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+    unit.setListed(listed);
+    unit = unitRepository.save(unit);
+    return unit.isListed();
   }
 
   private double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2)

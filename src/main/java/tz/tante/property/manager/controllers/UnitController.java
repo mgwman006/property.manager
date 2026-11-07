@@ -10,6 +10,7 @@ import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 import tz.tante.property.manager.models.dtos.ApiResponse;
 import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
+import tz.tante.property.manager.models.dtos.requests.UnitListingUpdateDTO;
 import tz.tante.property.manager.models.dtos.responses.ListedUnitsPageDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
@@ -123,6 +124,13 @@ public class UnitController
   {
     UnitStatus updatedStatus = unitService.updateUnitStatus(unitId, status);
     return ResponseEntity.ok(ApiResponse.success(updatedStatus, HttpStatus.OK.value()));
+  }
+
+  @PatchMapping("/{unitId}/listed")
+  public ResponseEntity<ApiResponse<Boolean>> updateUnitListing(@PathVariable Long unitId, @Valid @RequestBody UnitListingUpdateDTO request)
+  {
+    Boolean updatedListed = unitService.updateUnitListed(unitId, request.listed());
+    return ResponseEntity.ok(ApiResponse.success(updatedListed, HttpStatus.OK.value()));
   }
 
   @PostMapping("/{unitId}/images")
