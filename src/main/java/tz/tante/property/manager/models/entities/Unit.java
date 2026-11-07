@@ -53,7 +53,7 @@ public class Unit extends BaseEntity
   private  String sizeUnit;
 
   @Column(nullable = false)
-  private boolean listed = false;
+  private boolean isListed = false;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "building_id")

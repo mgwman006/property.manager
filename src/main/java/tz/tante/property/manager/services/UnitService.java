@@ -44,7 +44,7 @@ public class UnitService
     Integer size,
     String sortBy,
     String direction,
-    Boolean listed,
+    Boolean isListed,
     Long buildingId,
     Long rentalProfileId,
     UnitType type,
@@ -72,10 +72,10 @@ public class UnitService
     Specification<Unit> specification = (root, criteriaQuery, criteriaBuilder) ->
       criteriaBuilder.conjunction();
 
-    if (listed != null)
+    if (isListed != null)
     {
       specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
-        criteriaBuilder.equal(root.get("listed"), listed)
+        criteriaBuilder.equal(root.get("isListed"), isListed)
       );
     }
 
@@ -244,7 +244,7 @@ public class UnitService
     Integer size,
     String sortBy,
     String direction,
-    Boolean listed,
+    Boolean isListed,
     Double latitude,
     Double longitude,
     Double radiusKm
@@ -276,9 +276,9 @@ public class UnitService
     Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
 
-    boolean safeListed = listed == null || listed;
+    boolean safeListed = isListed == null || isListed;
     Specification<Unit> specification = Specification.where((root, criteriaQuery, criteriaBuilder) ->
-      criteriaBuilder.equal(root.get("listed"), safeListed)
+      criteriaBuilder.equal(root.get("isListed"), safeListed)
     );
 
     double latDelta = radiusKm / 111.0;
@@ -456,11 +456,11 @@ public class UnitService
   }
 
   @Transactional
-  public Boolean updateUnitListed(Long unitId, Boolean listed)
+  public Boolean updateUnitListingStatus(Long unitId, Boolean isListed)
   {
     Unit unit = unitRepository.findById(unitId)
       .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
-    unit.setListed(listed);
+    unit.setListed(isListed);
     unit = unitRepository.save(unit);
     return unit.isListed();
   }

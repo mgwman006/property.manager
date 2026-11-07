@@ -155,7 +155,7 @@ class UnitServiceTest
     CriteriaQuery<?> criteriaQuery = mock();
     CriteriaBuilder criteriaBuilder = mock();
     specification.getValue().toPredicate(root, criteriaQuery, criteriaBuilder);
-    verify(root, never()).get("listed");
+    verify(root, never()).get("isListed");
   }
 
   @Test

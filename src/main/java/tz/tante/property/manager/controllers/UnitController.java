@@ -32,7 +32,7 @@ public class UnitController
     @RequestParam(required = false, defaultValue = "20") Integer size,
     @RequestParam(required = false, defaultValue = "rentAmount") String sortBy,
     @RequestParam(required = false, defaultValue = "desc") String direction,
-    @RequestParam(required = false) Boolean listed,
+    @RequestParam(required = false) Boolean isListed,
     @RequestParam(required = false) Long buildingId,
     @RequestParam(required = false) Long rentalProfileId,
     @RequestParam(required = false) UnitType type,
@@ -56,7 +56,7 @@ public class UnitController
      size,
      sortBy,
      direction,
-     listed,
+     isListed,
      buildingId,
      rentalProfileId,
      type,
@@ -87,7 +87,7 @@ public class UnitController
     @RequestParam(required = false, defaultValue = "20") Integer size,
     @RequestParam(required = false, defaultValue = "rentAmount") String sortBy,
     @RequestParam(required = false, defaultValue = "desc") String direction,
-    @RequestParam(required = false) Boolean listed
+    @RequestParam(required = false) Boolean isListed
   )
   {
     ListedUnitsPageDTO response = unitService.getNearbyUnits(
@@ -95,7 +95,7 @@ public class UnitController
      size,
      sortBy,
      direction,
-     listed,
+     isListed,
      latitude,
      longitude,
      radiusKm
@@ -126,11 +126,11 @@ public class UnitController
     return ResponseEntity.ok(ApiResponse.success(updatedStatus, HttpStatus.OK.value()));
   }
 
-  @PatchMapping("/{unitId}/listed")
-  public ResponseEntity<ApiResponse<Boolean>> updateUnitListing(@PathVariable Long unitId, @Valid @RequestBody UnitListingUpdateDTO request)
+  @PatchMapping("/{unitId}/listing/status")
+  public ResponseEntity<ApiResponse<Boolean>> updateUnitListingStatus(@PathVariable Long unitId, @RequestParam UnitListingUpdateDTO request)
   {
-    Boolean updatedListed = unitService.updateUnitListed(unitId, request.listed());
-    return ResponseEntity.ok(ApiResponse.success(updatedListed, HttpStatus.OK.value()));
+    Boolean isListed = unitService.updateUnitListingStatus(unitId, request.isListed());
+    return ResponseEntity.ok(ApiResponse.success(isListed, HttpStatus.OK.value()));
   }
 
   @PostMapping("/{unitId}/images")
