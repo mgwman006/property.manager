@@ -19,12 +19,7 @@ import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyOwnerDTO;
-import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.LocationDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.PropertyImageDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
+import tz.tante.property.manager.models.dtos.responses.*;
 import tz.tante.property.manager.models.entities.*;
 import tz.tante.property.manager.repositories.PropertyImageRepository;
 import tz.tante.property.manager.repositories.PropertyRepository;
@@ -302,8 +297,8 @@ public class PropertyService
       address.getPostalCode(),
       address.getStreetNumber(),
       address.getStreetName(),
-      address.getCity(),
       address.getWard(),
+      address.getCity(),
       address.getRegion(),
       address.getCountry()
     );
@@ -313,7 +308,10 @@ public class PropertyService
     List<BuildingDetailsDTO> buildingDetailsDTOs = new ArrayList<>();
     for (Building building : buildings)
     {
-      List<UnitDetailsDTO> unitDetailsDTOs = mapToUnitDetailsDTOs(building.getUnits(), building.getId());
+      List<UnitSummaryDTO> unitDetailsDTOs = building.getUnits()
+        .stream()
+        .map(unit -> mapToUnitSummaryDTO(unit))
+        .toList();
       BuildingDetailsDTO buildingDetailsDTO = new BuildingDetailsDTO(
         propertyId,
         building.getId(),
@@ -327,6 +325,25 @@ public class PropertyService
       buildingDetailsDTOs.add(buildingDetailsDTO);
     }
     return buildingDetailsDTOs;
+  }
+
+  public UnitSummaryDTO mapToUnitSummaryDTO(Unit unit)
+  {
+    return new UnitSummaryDTO(
+      unit.getId(),
+      unit.getUnitNumber(),
+      unit.getNumberOfBedrooms(),
+      unit.getNumberOfBathrooms(),
+      unit.getNumberParkingSpots(),
+      unit.getRentAmount(),
+      unit.getType(),
+      unit.getStatus(),
+      unit.getRoomSize(),
+      unit.getSizeUnit(),
+      unit.isListed(),
+      unit.getBuilding() == null ? null : unit.getBuilding().getId(),
+      unit.getImages().stream().map(this::mapToUnitImageDTO).toList().getFirst()
+    );
   }
 
   private List<UnitDetailsDTO> mapToUnitDetailsDTOs(List<Unit> units, Long buildingId)
@@ -365,6 +382,9 @@ public class PropertyService
       unit.getSizeUnit(),
       unit.isListed(),
       buildingId,
+      mapToLocationDetailsDTO(
+        unit.getBuilding() == null || unit.getBuilding().getProperty() == null ? null : unit.getBuilding().getProperty().getLocation()
+      ),
       imageDTOs
     );
   }

@@ -10,6 +10,6 @@ public record BuildingDetailsDTO(
   String code,
   String description,
   int numberOfFloors,
-  List<UnitDetailsDTO> units)
+  List<UnitSummaryDTO> units)
 {
 }

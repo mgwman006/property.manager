@@ -13,6 +13,7 @@ import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.UnitListingUpdateDTO;
 import tz.tante.property.manager.models.dtos.responses.ListedUnitsPageDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.UnitSummaryDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
 import tz.tante.property.manager.services.UnitService;
 
@@ -27,7 +28,7 @@ public class UnitController
   private final UnitService unitService;
 
   @GetMapping
-  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getListedUnits(
+  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getFilteredUnits(
     @RequestParam(required = false, defaultValue = "0") Integer page,
     @RequestParam(required = false, defaultValue = "20") Integer size,
     @RequestParam(required = false, defaultValue = "rentAmount") String sortBy,
@@ -51,7 +52,7 @@ public class UnitController
     @RequestParam(required = false) String query
   )
   {
-    ListedUnitsPageDTO response = unitService.getListedUnits(
+    ListedUnitsPageDTO response = unitService.getFilteredUnits(
      page,
      size,
      sortBy,
@@ -78,8 +79,15 @@ public class UnitController
     return ResponseEntity.ok(ApiResponse.success(response, HttpStatus.OK.value()));
   }
 
+  @GetMapping("/{unitId}")
+  public ResponseEntity<ApiResponse<UnitDetailsDTO>> getUnitDetails(@PathVariable Long unitId)
+  {
+    UnitDetailsDTO response = unitService.getUnitDetails(unitId);
+    return ResponseEntity.ok(ApiResponse.success(response, HttpStatus.OK.value()));
+  }
+
   @GetMapping("/nearby")
-  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getNearbyUnits(
+  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getNearbyUnitsByCoordinates(
     @RequestParam Double latitude,
     @RequestParam Double longitude,
     @RequestParam Double radiusKm,
@@ -90,7 +98,7 @@ public class UnitController
     @RequestParam(required = false) Boolean isListed
   )
   {
-    ListedUnitsPageDTO response = unitService.getNearbyUnits(
+    ListedUnitsPageDTO response = unitService.getNearbyUnitsByCoordinates(
      page,
      size,
      sortBy,
@@ -105,9 +113,9 @@ public class UnitController
   }
 
   @PostMapping("/building/{buildingId}")
-  public ResponseEntity<ApiResponse<UnitDetailsDTO>> createUnit(@PathVariable Long buildingId, @Valid @RequestBody UnitCreateDTO request)
+  public ResponseEntity<ApiResponse<UnitSummaryDTO>> createUnit(@PathVariable Long buildingId, @Valid @RequestBody UnitCreateDTO request)
   {
-    UnitDetailsDTO response = unitService.createUnit(buildingId, request);
+    UnitSummaryDTO response = unitService.createUnit(buildingId, request);
     return ResponseEntity.status(HttpStatus.CREATED)
       .body(ApiResponse.success(response, HttpStatus.CREATED.value()));
   }

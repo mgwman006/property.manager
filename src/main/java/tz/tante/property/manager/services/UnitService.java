@@ -1,5 +1,22 @@
 package tz.tante.property.manager.services;
 
+
+import tz.tante.property.manager.enums.UnitStatus;
+import tz.tante.property.manager.enums.UnitType;
+import tz.tante.property.manager.exceptions.ResourceNotFoundException;
+import tz.tante.property.manager.exceptions.TanteException;
+import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
+import tz.tante.property.manager.models.dtos.responses.*;
+import tz.tante.property.manager.models.entities.Building;
+import tz.tante.property.manager.models.entities.Unit;
+import tz.tante.property.manager.models.entities.UnitImage;
+import tz.tante.property.manager.repositories.BuildingRepository;
+import tz.tante.property.manager.repositories.UnitImageRepository;
+import tz.tante.property.manager.repositories.UnitRepository;
+import tz.tante.property.manager.utilities.Utility;
+
+import java.math.BigDecimal;
+import java.util.List;
 import jakarta.persistence.criteria.JoinType;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,36 +27,28 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import tz.tante.property.manager.enums.UnitStatus;
-import tz.tante.property.manager.enums.UnitType;
-import tz.tante.property.manager.exceptions.ResourceNotFoundException;
-import tz.tante.property.manager.exceptions.TanteException;
-import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
-import tz.tante.property.manager.models.dtos.responses.ListedUnitsPageDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
-import tz.tante.property.manager.models.entities.Building;
-import tz.tante.property.manager.models.entities.Unit;
-import tz.tante.property.manager.models.entities.UnitImage;
-import tz.tante.property.manager.repositories.BuildingRepository;
-import tz.tante.property.manager.repositories.UnitImageRepository;
-import tz.tante.property.manager.repositories.UnitRepository;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class UnitService
 {
+  /**
+   * CONSTANTS
+   * ---------
+   */
+  private static final String CLASS_NAME = UnitService.class.getSimpleName();
+  private static final String NOT_FOUND = " not found";
+  /**
+   * FIELDS
+   * ------
+   */
   private final UnitRepository unitRepository;
   private final BuildingRepository buildingRepository;
   private final UnitImageRepository unitImageRepository;
   private final S3StorageService s3StorageService;
 
   @Transactional(readOnly = true)
-  public ListedUnitsPageDTO getListedUnits(
+  public ListedUnitsPageDTO getFilteredUnits(
     Integer page,
     Integer size,
     String sortBy,
@@ -63,11 +72,7 @@ public class UnitService
     String query
   )
   {
-    int safePage = page == null ? 0 : Math.max(page, 0);
-    int safeSize = size == null ? 20 : Math.max(Math.min(size, 100), 1);
-    String safeSortBy = resolveSortField(sortBy);
-    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
+    Pageable pageable = initializePageable(page, size, sortBy, direction);
 
     Specification<Unit> specification = (root, criteriaQuery, criteriaBuilder) ->
       criteriaBuilder.conjunction();
@@ -228,7 +233,7 @@ public class UnitService
 
     Page<Unit> result = unitRepository.findAll(specification, pageable);
     return new ListedUnitsPageDTO(
-      result.getContent().stream().map(this::mapToUnitDetailsDTO).toList(),
+      result.getContent().stream().map(Utility::unitToUnitSummaryDTO).toList(),
       result.getNumber(),
       result.getSize(),
       result.getTotalElements(),
@@ -238,8 +243,17 @@ public class UnitService
     );
   }
 
+  private Pageable initializePageable(Integer page, Integer size, String sortBy, String direction)
+  {
+    int safePage = page == null ? 0 : Math.max(page, 0);
+    int safeSize = size == null ? 20 : Math.max(Math.min(size, 100), 1);
+    String safeSortBy = resolveSortField(sortBy);
+    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    return PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
+  }
+
   @Transactional(readOnly = true)
-  public ListedUnitsPageDTO getNearbyUnits(
+  public ListedUnitsPageDTO getNearbyUnitsByCoordinates(
     Integer page,
     Integer size,
     String sortBy,
@@ -270,11 +284,7 @@ public class UnitService
       throw new TanteException("radiusKm must be greater than 0");
     }
 
-    int safePage = page == null ? 0 : Math.max(page, 0);
-    int safeSize = size == null ? 20 : Math.max(Math.min(size, 100), 1);
-    String safeSortBy = resolveSortField(sortBy);
-    Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-    Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(sortDirection, safeSortBy));
+    Pageable pageable = initializePageable(page, size, sortBy, direction);
 
     boolean safeListed = isListed == null || isListed;
     Specification<Unit> specification = Specification.where((root, criteriaQuery, criteriaBuilder) ->
@@ -309,14 +319,14 @@ public class UnitService
       .toList();
 
     long totalElements = filteredResults.size();
-    int totalPages = filteredResults.isEmpty() ? 1 : (int) Math.ceil((double) totalElements / safeSize);
-    boolean hasNext = safePage + 1 < totalPages;
-    boolean hasPrevious = safePage > 0;
+    int totalPages = filteredResults.isEmpty() ? 1 : (int) Math.ceil((double) totalElements / pageable.getPageSize());
+    boolean hasNext = pageable.getPageNumber() + 1 < totalPages;
+    boolean hasPrevious = pageable.getPageNumber() > 0;
 
     return new ListedUnitsPageDTO(
-      filteredResults.stream().map(this::mapToUnitDetailsDTO).toList(),
-      safePage,
-      safeSize,
+      filteredResults.stream().map(Utility::unitToUnitSummaryDTO).toList(),
+      pageable.getPageNumber(),
+      pageable.getPageSize(),
       totalElements,
       totalPages,
       hasNext,
@@ -325,10 +335,10 @@ public class UnitService
   }
 
   @Transactional
-  public UnitDetailsDTO createUnit(Long buildingId, UnitCreateDTO request)
+  public UnitSummaryDTO createUnit(Long buildingId, UnitCreateDTO request)
   {
     Building building = buildingRepository.findById(buildingId)
-      .orElseThrow(() -> new ResourceNotFoundException("Building with ID " + buildingId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Building with ID " + buildingId + NOT_FOUND));
 
     Unit unit = new Unit();
     unit.setUnitNumber(request.unitNumber());
@@ -345,21 +355,35 @@ public class UnitService
     building.addUnit(unit);
     unit = unitRepository.save(unit);
 
-    return mapToUnitDetailsDTO(unit);
+    return Utility.unitToUnitSummaryDTO(unit);
   }
 
   public UnitStatus getUnitStatus(Long unitId)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
     return unit.getStatus();
+  }
+
+  @Transactional(readOnly = true)
+  public UnitDetailsDTO getUnitDetails(Long unitId)
+  {
+    Unit unit = unitRepository.findById(unitId)
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
+
+    if (!unit.isListed())
+    {
+      throw new ResourceNotFoundException("Listed unit with ID " + unitId + NOT_FOUND);
+    }
+
+    return mapToUnitDetailsDTO(unit);
   }
 
   @Transactional
   public UnitImageDTO uploadUnitImage(Long unitId, MultipartFile file, Long createdByUserId)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
 
     S3StorageService.StoredImage storedImage = s3StorageService.uploadFile(file, "units/" + unitId);
 
@@ -381,7 +405,7 @@ public class UnitService
   public List<UnitImageDTO> getUnitImages(Long unitId)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
 
     return unit.getImages().stream()
       .map(this::mapToUnitImageDTO)
@@ -392,10 +416,10 @@ public class UnitService
   public void deleteUnitImage(Long unitId, Long imageId)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
 
     UnitImage image = unitImageRepository.findById(imageId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit image with ID " + imageId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit image with ID " + imageId + NOT_FOUND));
 
     if (!image.getUnit().getId().equals(unit.getId()))
     {
@@ -409,9 +433,9 @@ public class UnitService
 
   private UnitDetailsDTO mapToUnitDetailsDTO(Unit unit)
   {
-    List<UnitImageDTO> imageDTOs = unit.getImages() == null
-      ? new ArrayList<>()
-      : unit.getImages().stream().map(this::mapToUnitImageDTO).toList();
+    List<UnitImageDTO> imageDTOs = unit.getImages().stream().map(Utility::imageToUnitImageDTO).toList();
+
+    LocationDetailsDTO locationDTO = Utility.locationToLocationDetailsDTO(unit.getBuilding().getProperty().getLocation());
 
     return new UnitDetailsDTO(
       unit.getId(),
@@ -427,8 +451,10 @@ public class UnitService
       unit.getSizeUnit(),
       unit.isListed(),
       unit.getBuilding() == null ? null : unit.getBuilding().getId(),
+      locationDTO,
       imageDTOs);
   }
+
 
   private UnitImageDTO mapToUnitImageDTO(UnitImage image)
   {
@@ -450,7 +476,7 @@ public class UnitService
   public UnitStatus updateUnitStatus(Long unitId, UnitStatus status)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
     unit.setStatus(status);
     unit = unitRepository.save(unit);
     return unit.getStatus();
@@ -460,7 +486,7 @@ public class UnitService
   public Boolean updateUnitListingStatus(Long unitId, Boolean isListed)
   {
     Unit unit = unitRepository.findById(unitId)
-      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
     unit.setListed(isListed);
     unit = unitRepository.save(unit);
     return unit.isListed();

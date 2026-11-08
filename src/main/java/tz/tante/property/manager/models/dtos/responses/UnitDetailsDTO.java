@@ -23,6 +23,8 @@ public record UnitDetailsDTO(
   String sizeUnit,
   boolean isListed,
   Long buildingId,
+  @Schema(description = "Location (coordinates and address) of the property the unit belongs to")
+  LocationDetailsDTO location,
   List<UnitImageDTO> images)
 {
 }

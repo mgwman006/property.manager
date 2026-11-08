@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.models.dtos.requests.BuildingDetailsUpdateDTO;
 import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.UnitSummaryDTO;
 import tz.tante.property.manager.models.entities.Building;
 import tz.tante.property.manager.repositories.BuildingRepository;
 
@@ -42,7 +42,7 @@ public class BuildingService
       building.getCode(),
       building.getDescription(),
       building.getNumberOfFloors(),
-      new ArrayList<UnitDetailsDTO>()
+      new ArrayList<UnitSummaryDTO>()
     );
   }
 }
