@@ -48,7 +48,7 @@ public class UnitService
   private final S3StorageService s3StorageService;
 
   @Transactional(readOnly = true)
-  public ListedUnitsPageDTO getFilteredUnits(
+  public PageDTO<UnitSummaryDTO> getFilteredUnits(
     Integer page,
     Integer size,
     String sortBy,
@@ -232,7 +232,7 @@ public class UnitService
     }
 
     Page<Unit> result = unitRepository.findAll(specification, pageable);
-    return new ListedUnitsPageDTO(
+    return new PageDTO<>(
       result.getContent().stream().map(Utility::unitToUnitSummaryDTO).toList(),
       result.getNumber(),
       result.getSize(),
@@ -253,7 +253,7 @@ public class UnitService
   }
 
   @Transactional(readOnly = true)
-  public ListedUnitsPageDTO getNearbyUnitsByCoordinates(
+  public PageDTO<UnitSummaryDTO> getNearbyUnitsByCoordinates(
     Integer page,
     Integer size,
     String sortBy,
@@ -323,7 +323,7 @@ public class UnitService
     boolean hasNext = pageable.getPageNumber() + 1 < totalPages;
     boolean hasPrevious = pageable.getPageNumber() > 0;
 
-    return new ListedUnitsPageDTO(
+    return new PageDTO<>(
       filteredResults.stream().map(Utility::unitToUnitSummaryDTO).toList(),
       pageable.getPageNumber(),
       pageable.getPageSize(),

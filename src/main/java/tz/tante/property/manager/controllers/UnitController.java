@@ -11,7 +11,7 @@ import tz.tante.property.manager.enums.UnitType;
 import tz.tante.property.manager.models.dtos.ApiResponse;
 import tz.tante.property.manager.models.dtos.requests.UnitCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.UnitListingUpdateDTO;
-import tz.tante.property.manager.models.dtos.responses.ListedUnitsPageDTO;
+import tz.tante.property.manager.models.dtos.responses.PageDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitSummaryDTO;
 import tz.tante.property.manager.models.dtos.responses.UnitImageDTO;
@@ -28,7 +28,7 @@ public class UnitController
   private final UnitService unitService;
 
   @GetMapping
-  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getFilteredUnits(
+  public ResponseEntity<ApiResponse<PageDTO<UnitSummaryDTO>>> getFilteredUnits(
     @RequestParam(required = false, defaultValue = "0") Integer page,
     @RequestParam(required = false, defaultValue = "20") Integer size,
     @RequestParam(required = false, defaultValue = "rentAmount") String sortBy,
@@ -52,7 +52,7 @@ public class UnitController
     @RequestParam(required = false) String query
   )
   {
-    ListedUnitsPageDTO response = unitService.getFilteredUnits(
+    PageDTO<UnitSummaryDTO> response = unitService.getFilteredUnits(
      page,
      size,
      sortBy,
@@ -87,7 +87,7 @@ public class UnitController
   }
 
   @GetMapping("/nearby")
-  public ResponseEntity<ApiResponse<ListedUnitsPageDTO>> getNearbyUnitsByCoordinates(
+  public ResponseEntity<ApiResponse<PageDTO<UnitSummaryDTO>>> getNearbyUnitsByCoordinates(
     @RequestParam Double latitude,
     @RequestParam Double longitude,
     @RequestParam Double radiusKm,
@@ -98,7 +98,7 @@ public class UnitController
     @RequestParam(required = false) Boolean isListed
   )
   {
-    ListedUnitsPageDTO response = unitService.getNearbyUnitsByCoordinates(
+    PageDTO<UnitSummaryDTO> response = unitService.getNearbyUnitsByCoordinates(
      page,
      size,
      sortBy,
