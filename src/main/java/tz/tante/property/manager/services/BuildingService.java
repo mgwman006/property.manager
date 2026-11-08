@@ -5,11 +5,10 @@ import org.springframework.stereotype.Service;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
 import tz.tante.property.manager.models.dtos.requests.BuildingDetailsUpdateDTO;
 import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitSummaryDTO;
 import tz.tante.property.manager.models.entities.Building;
 import tz.tante.property.manager.repositories.BuildingRepository;
+import tz.tante.property.manager.utilities.Utility;
 
-import java.util.ArrayList;
 
 @Service
 @AllArgsConstructor
@@ -35,14 +34,14 @@ public class BuildingService
   private BuildingDetailsDTO mapToBuildingDetailsDTO(tz.tante.property.manager.models.entities.Building building)
   {
     return new BuildingDetailsDTO(
-      building.getProperty().getId(),
       building.getId(),
       building.getName(),
       building.getNumber(),
       building.getCode(),
       building.getDescription(),
       building.getNumberOfFloors(),
-      new ArrayList<UnitSummaryDTO>()
+      Utility.propertyToPropertyDetailsDTO(building.getProperty()),
+      building.getUnits().stream().map(Utility::unitToUnitSummaryDTO).toList()
     );
   }
 }

@@ -6,6 +6,7 @@ import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Schema(description = "Lightweight representation of a unit, used when returning lists of units.")
 public record UnitSummaryDTO(
@@ -17,11 +18,13 @@ public record UnitSummaryDTO(
   BigDecimal rentAmount,
   UnitType type,
   UnitStatus status,
-  Long size,
+  Long roomSize,
   String sizeUnit,
   boolean isListed,
+  int floorNumber,
   Long buildingId,
-  @Schema(description = "Primary image of the unit, or the first available image when no primary image is set")
-  UnitImageDTO coverImage)
+  String propertyName,
+  LocationDetailsDTO location,
+  List<UnitImageDTO> images)
 {
 }

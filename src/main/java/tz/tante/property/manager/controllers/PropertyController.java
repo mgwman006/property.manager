@@ -12,6 +12,7 @@ import tz.tante.property.manager.models.dtos.ApiResponse;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
 import tz.tante.property.manager.models.dtos.responses.PropertyImageDTO;
+import tz.tante.property.manager.models.dtos.responses.PropertySummaryDTO;
 import tz.tante.property.manager.services.PropertyService;
 
 import java.util.List;
@@ -49,9 +50,9 @@ public class PropertyController
   }
 
   @GetMapping("/rental-profile/{rentalProfileId}")
-  public ResponseEntity<ApiResponse<List<PropertyDetailsDTO>>> getPropertiesByRentalProfileId(@PathVariable Long rentalProfileId)
+  public ResponseEntity<ApiResponse<List<PropertySummaryDTO>>> getPropertiesByRentalProfileId(@PathVariable Long rentalProfileId)
   {
-    List<PropertyDetailsDTO> response = propertyService.getPropertiesByRentalProfileId(rentalProfileId);
+    List<PropertySummaryDTO> response = propertyService.getPropertiesByRentalProfileId(rentalProfileId);
     return ResponseEntity.status(HttpStatus.OK)
       .body(ApiResponse.success(response, HttpStatus.OK.value()));
   }

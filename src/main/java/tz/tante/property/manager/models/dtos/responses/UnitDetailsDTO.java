@@ -1,10 +1,10 @@
 package tz.tante.property.manager.models.dtos.responses;
 
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -19,12 +19,11 @@ public record UnitDetailsDTO(
   BigDecimal rentAmount,
   UnitType type,
   UnitStatus status,
-  Long size,
+  Long roomSize,
   String sizeUnit,
   boolean isListed,
-  Long buildingId,
-  @Schema(description = "Location (coordinates and address) of the property the unit belongs to")
-  LocationDetailsDTO location,
+  int floorNumber,
+  BuildingSummaryDTO building,
   List<UnitImageDTO> images)
 {
 }

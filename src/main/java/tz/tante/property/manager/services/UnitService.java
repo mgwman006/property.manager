@@ -450,8 +450,8 @@ public class UnitService
       unit.getRoomSize(),
       unit.getSizeUnit(),
       unit.isListed(),
-      unit.getBuilding() == null ? null : unit.getBuilding().getId(),
-      locationDTO,
+      unit.getFloorNumber(),
+      Utility.buildingToBuildingSummaryDTO(unit.getBuilding()),
       imageDTOs);
   }
 

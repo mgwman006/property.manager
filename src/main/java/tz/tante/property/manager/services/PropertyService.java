@@ -24,6 +24,7 @@ import tz.tante.property.manager.models.entities.*;
 import tz.tante.property.manager.repositories.PropertyImageRepository;
 import tz.tante.property.manager.repositories.PropertyRepository;
 import tz.tante.property.manager.repositories.PropertySequenceRepository;
+import tz.tante.property.manager.utilities.Utility;
 
 @Getter
 @Setter
@@ -84,7 +85,7 @@ public class PropertyService
     }
 
     Property savedProperty = propertyRepository.save(property);
-    return mapToPropertyDetailsDTO(savedProperty);
+    return Utility.propertyToPropertyDetailsDTO(savedProperty);
   }
 
   @Transactional
@@ -93,7 +94,7 @@ public class PropertyService
     Property property = propertyRepository.findById(id)
       .orElseThrow(() -> new ResourceNotFoundException("Property with id " + id + " not found"));
 
-    return mapToPropertyDetailsDTO(property);
+    return Utility.propertyToPropertyDetailsDTO(property);
   }
 
   @Transactional
@@ -153,7 +154,7 @@ public class PropertyService
   {
     return propertyRepository.findAll()
       .stream()
-      .map(this::mapToPropertyDetailsDTO)
+      .map(Utility::propertyToPropertyDetailsDTO)
       .toList();
   }
 
@@ -217,32 +218,7 @@ public class PropertyService
     return owners;
   }
 
-  private PropertyDetailsDTO mapToPropertyDetailsDTO(Property property)
-  {
-    Location location = property.getLocation();
-    LocationDetailsDTO locationDetailsDTO = mapToLocationDetailsDTO(location);
 
-    List<Building> buildings = property.getBuildings();
-    List<BuildingDetailsDTO> buildingDetailsDTOs = mapToBuildingDetailsDTOs(buildings, property.getId());
-
-    List<PropertyImageDTO> imageDTOs = property.getImages() == null
-      ? new ArrayList<>()
-      : property.getImages().stream().map(this::mapToPropertyImageDTO).toList();
-
-    return new PropertyDetailsDTO(
-      property.getId(),
-      property.getCode(),
-      property.getDescription(),
-      property.getName(),
-      property.getLandSize(),
-      property.getLandSizeUnit(),
-      property.getType() == null ? null : property.getType().toString(),
-      property.getDevelopmentStatus() == null ? null : property.getDevelopmentStatus().toString(),
-      locationDetailsDTO,
-      buildingDetailsDTOs,
-      imageDTOs
-    );
-  }
 
   private PropertyImageDTO mapToPropertyImageDTO(PropertyImage image)
   {
@@ -303,91 +279,8 @@ public class PropertyService
       address.getCountry()
     );
   }
-  private List<BuildingDetailsDTO> mapToBuildingDetailsDTOs(List<Building> buildings, Long propertyId)
-  {
-    List<BuildingDetailsDTO> buildingDetailsDTOs = new ArrayList<>();
-    for (Building building : buildings)
-    {
-      List<UnitSummaryDTO> unitDetailsDTOs = building.getUnits()
-        .stream()
-        .map(unit -> mapToUnitSummaryDTO(unit))
-        .toList();
-      BuildingDetailsDTO buildingDetailsDTO = new BuildingDetailsDTO(
-        propertyId,
-        building.getId(),
-        building.getName(),
-        building.getNumber(),
-        building.getCode(),
-        building.getDescription(),
-        building.getNumberOfFloors(),
-        unitDetailsDTOs
-      );
-      buildingDetailsDTOs.add(buildingDetailsDTO);
-    }
-    return buildingDetailsDTOs;
-  }
 
-  public UnitSummaryDTO mapToUnitSummaryDTO(Unit unit)
-  {
-    return new UnitSummaryDTO(
-      unit.getId(),
-      unit.getUnitNumber(),
-      unit.getNumberOfBedrooms(),
-      unit.getNumberOfBathrooms(),
-      unit.getNumberParkingSpots(),
-      unit.getRentAmount(),
-      unit.getType(),
-      unit.getStatus(),
-      unit.getRoomSize(),
-      unit.getSizeUnit(),
-      unit.isListed(),
-      unit.getBuilding() == null ? null : unit.getBuilding().getId(),
-      unit.getImages().stream().map(this::mapToUnitImageDTO).toList().getFirst()
-    );
-  }
 
-  private List<UnitDetailsDTO> mapToUnitDetailsDTOs(List<Unit> units, Long buildingId)
-  {
-    List<UnitDetailsDTO> unitDetailsDTOs = new ArrayList<>();
-    for (Unit unit : units)
-    {
-      UnitDetailsDTO unitDetailsDTO = mapToUnitDetailsDTO(unit, buildingId);
-      unitDetailsDTOs.add(unitDetailsDTO);
-    }
-    return unitDetailsDTOs;
-  }
-
-  private UnitDetailsDTO mapToUnitDetailsDTO(Unit unit, Long buildingId)
-  {
-    if (unit == null)
-    {
-      return null;
-    }
-
-    List<UnitImageDTO> imageDTOs = unit.getImages() == null
-      ? new ArrayList<>()
-      : unit.getImages().stream().map(this::mapToUnitImageDTO).toList();
-
-    return new UnitDetailsDTO(
-      unit.getId(),
-      unit.getUnitNumber(),
-      unit.getRentalProfileId(),
-      unit.getNumberOfBedrooms(),
-      unit.getNumberOfBathrooms(),
-      unit.getNumberParkingSpots(),
-      unit.getRentAmount(),
-      unit.getType(),
-      unit.getStatus(),
-      unit.getRoomSize(),
-      unit.getSizeUnit(),
-      unit.isListed(),
-      buildingId,
-      mapToLocationDetailsDTO(
-        unit.getBuilding() == null || unit.getBuilding().getProperty() == null ? null : unit.getBuilding().getProperty().getLocation()
-      ),
-      imageDTOs
-    );
-  }
 
   private UnitImageDTO mapToUnitImageDTO(UnitImage image)
   {
@@ -406,9 +299,9 @@ public class PropertyService
     );
   }
 
-  public List<PropertyDetailsDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
+  public List<PropertySummaryDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
   {
     List<Property> properties = propertyRepository.findByRentalProfileId(rentalProfileId);
-    return properties.stream().map(this::mapToPropertyDetailsDTO).toList();
+    return properties.stream().map(Utility::propertyToPropertySummaryDTO).toList();
   }
 }
