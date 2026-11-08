@@ -55,6 +55,8 @@ public class Unit extends BaseEntity
   @Column(nullable = false)
   private boolean isListed = false;
 
+  private int floorNumber;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "building_id")
   private Building building;

@@ -435,8 +435,6 @@ public class UnitService
   {
     List<UnitImageDTO> imageDTOs = unit.getImages().stream().map(Utility::imageToUnitImageDTO).toList();
 
-    LocationDetailsDTO locationDTO = Utility.locationToLocationDetailsDTO(unit.getBuilding().getProperty().getLocation());
-
     return new UnitDetailsDTO(
       unit.getId(),
       unit.getUnitNumber(),
@@ -450,8 +448,8 @@ public class UnitService
       unit.getRoomSize(),
       unit.getSizeUnit(),
       unit.isListed(),
-      unit.getBuilding() == null ? null : unit.getBuilding().getId(),
-      locationDTO,
+      unit.getFloorNumber(),
+      Utility.buildingToBuildingSummaryDTO(unit.getBuilding()),
       imageDTOs);
   }
 
