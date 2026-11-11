@@ -32,7 +32,12 @@ import tz.tante.property.manager.utilities.Utility;
 @AllArgsConstructor
 public class PropertyService
 {
+  /**
+   * Constants
+   */
   private static final ZoneId UTC = ZoneId.of("UTC");
+  private static final String PROPERTY_WITH_ID = "Property with id ";
+  private static final String NOT_FOUND = " not found";
 
   private final PropertyRepository propertyRepository;
   private final PropertySequenceRepository propertySequenceRepository;
@@ -92,7 +97,7 @@ public class PropertyService
   public PropertyDetailsDTO getPropertyDetailsById(Long id)
   {
     Property property = propertyRepository.findById(id)
-      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + id + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + id + NOT_FOUND));
 
     return Utility.propertyToPropertyDetailsDTO(property);
   }
@@ -101,7 +106,7 @@ public class PropertyService
   public PropertyImageDTO uploadPropertyImage(Long propertyId, MultipartFile file, Long createdByUserId)
   {
     Property property = propertyRepository.findById(propertyId)
-      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
 
     S3StorageService.StoredImage storedImage = s3StorageService.uploadFile(file, property.getCode());
 
@@ -123,7 +128,7 @@ public class PropertyService
   public List<PropertyImageDTO> getPropertyImages(Long propertyId)
   {
     Property property = propertyRepository.findById(propertyId)
-      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
 
     return property.getImages().stream()
       .map(this::mapToPropertyImageDTO)
@@ -134,10 +139,10 @@ public class PropertyService
   public void deletePropertyImage(Long propertyId, Long imageId)
   {
     Property property = propertyRepository.findById(propertyId)
-      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + propertyId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
 
     PropertyImage image = propertyImageRepository.findById(imageId)
-      .orElseThrow(() -> new ResourceNotFoundException("Property image with id " + imageId + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException("Property image with id " + imageId + NOT_FOUND));
 
     if (!image.getProperty().getId().equals(property.getId()))
     {
@@ -245,63 +250,9 @@ public class PropertyService
     return propertySequenceRepository.save(sequence);
   }
 
-  private LocationDetailsDTO mapToLocationDetailsDTO(Location location)
-  {
-    if (location == null)
-    {
-      return null;
-    }
-
-    Address address = location.getAddress();
-    AddressDTO addressDTO = mapToAddressDTO(address);
-
-    return new LocationDetailsDTO(
-      location.getLatitude(),
-      location.getLongitude(),
-      addressDTO
-    );
-  }
-
-  private AddressDTO mapToAddressDTO(Address address)
-  {
-    if (address == null)
-    {
-      return null;
-    }
-
-    return new AddressDTO(
-      address.getPostalCode(),
-      address.getStreetNumber(),
-      address.getStreetName(),
-      address.getWard(),
-      address.getCity(),
-      address.getRegion(),
-      address.getCountry()
-    );
-  }
-
-
-
-  private UnitImageDTO mapToUnitImageDTO(UnitImage image)
-  {
-    if (image == null)
-    {
-      return null;
-    }
-
-    return new UnitImageDTO(
-      image.getId(),
-      image.getUrl(),
-      image.getFileName(),
-      image.getContentType(),
-      image.getSize(),
-      image.isPrimaryImage()
-    );
-  }
-
-  public List<PropertySummaryDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
+  public List<PropertyDetailsDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
   {
     List<Property> properties = propertyRepository.findByRentalProfileId(rentalProfileId);
-    return properties.stream().map(Utility::propertyToPropertySummaryDTO).toList();
+    return properties.stream().map(Utility::propertyToPropertyDetailsDTO).toList();
   }
 }

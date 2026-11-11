@@ -139,7 +139,7 @@ public class Utility
         building.getCode(),
         building.getDescription(),
         building.getNumberOfFloors(),
-        propertyToPropertyDetailsDTO(building.getProperty()),
+        propertyToPropertySummaryDTO(building.getProperty()),
         building.getUnits().stream().map(Utility::unitToUnitSummaryDTO).toList()
       );
     }

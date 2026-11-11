@@ -9,7 +9,7 @@ public record BuildingDetailsDTO(
   String code,
   String description,
   int numberOfFloors,
-  PropertyDetailsDTO property,
+  PropertySummaryDTO property,
   List<UnitSummaryDTO> units)
 {
 }

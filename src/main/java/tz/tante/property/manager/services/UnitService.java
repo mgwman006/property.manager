@@ -371,11 +371,6 @@ public class UnitService
     Unit unit = unitRepository.findById(unitId)
       .orElseThrow(() -> new ResourceNotFoundException("Unit with ID " + unitId + NOT_FOUND));
 
-    if (!unit.isListed())
-    {
-      throw new ResourceNotFoundException("Listed unit with ID " + unitId + NOT_FOUND);
-    }
-
     return mapToUnitDetailsDTO(unit);
   }
 

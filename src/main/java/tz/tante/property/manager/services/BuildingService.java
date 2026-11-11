@@ -40,7 +40,7 @@ public class BuildingService
       building.getCode(),
       building.getDescription(),
       building.getNumberOfFloors(),
-      Utility.propertyToPropertyDetailsDTO(building.getProperty()),
+      Utility.propertyToPropertySummaryDTO(building.getProperty()),
       building.getUnits().stream().map(Utility::unitToUnitSummaryDTO).toList()
     );
   }
