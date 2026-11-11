@@ -36,6 +36,7 @@ public class SecurityFilterChainConfig
       )
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers(HttpMethod.GET,"/v1/units/**").permitAll()
         .requestMatchers(
           "/v1/auth/**",
           "/swagger-ui/**",

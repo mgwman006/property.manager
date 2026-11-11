@@ -11,6 +11,10 @@ import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -48,7 +52,32 @@ public class Unit extends BaseEntity
 
   private  String sizeUnit;
 
+  @Column(nullable = false)
+  private boolean isListed = false;
+
+  private int floorNumber;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "building_id")
   private Building building;
+
+  @OneToMany(
+    mappedBy = "unit",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true,
+    fetch = FetchType.LAZY
+  )
+  private List<UnitImage> images = new ArrayList<>();
+
+  @OneToMany(
+    mappedBy = "unit",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true
+  )
+  private Set<UnitListingManager> listingManagers = new HashSet<>();
+
+  public void addImage(UnitImage image) {
+    images.add(image);
+    image.setUnit(this);
+  }
 }

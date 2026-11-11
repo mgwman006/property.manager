@@ -31,8 +31,17 @@ server:
 
 app:
   cors:
-    allowed-origins: https://www.landlord.tante.tz,http://localhost:8080,http://localhost:4173,http://192.168.1.81:4173,http://localhost:4173,http://localhost:4175
+    allowed-origins: http://localhost:4178,https://www.landlord.tante.tz,http://localhost:8080,http://localhost:4173,http://192.168.1.81:4173,http://localhost:4173,http://localhost:4175
     allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
     allowed-headers: Authorization,Content-Type,Accept,Origin
     exposed-headers: Authorization
     allow-credentials: true
+  storage:
+    s3:
+      bucket: ${AWS_S3_BUCKET:property-manager-images}
+      region: ${AWS_REGION:us-east-1}
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+      endpoint: ""
+      public-url-base: ""
+      folder: ${AWS_S3_FOLDER:properties}

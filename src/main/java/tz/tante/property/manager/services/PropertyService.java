@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import tz.tante.property.manager.enums.PropertyRegister;
 import tz.tante.property.manager.exceptions.ResourceNotFoundException;
@@ -18,13 +19,12 @@ import tz.tante.property.manager.exceptions.TanteException;
 import tz.tante.property.manager.models.dtos.AddressDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyCreateDTO;
 import tz.tante.property.manager.models.dtos.requests.PropertyOwnerDTO;
-import tz.tante.property.manager.models.dtos.responses.BuildingDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.LocationDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.PropertyDetailsDTO;
-import tz.tante.property.manager.models.dtos.responses.UnitDetailsDTO;
+import tz.tante.property.manager.models.dtos.responses.*;
 import tz.tante.property.manager.models.entities.*;
+import tz.tante.property.manager.repositories.PropertyImageRepository;
 import tz.tante.property.manager.repositories.PropertyRepository;
 import tz.tante.property.manager.repositories.PropertySequenceRepository;
+import tz.tante.property.manager.utilities.Utility;
 
 @Getter
 @Setter
@@ -32,10 +32,17 @@ import tz.tante.property.manager.repositories.PropertySequenceRepository;
 @AllArgsConstructor
 public class PropertyService
 {
+  /**
+   * Constants
+   */
   private static final ZoneId UTC = ZoneId.of("UTC");
+  private static final String PROPERTY_WITH_ID = "Property with id ";
+  private static final String NOT_FOUND = " not found";
 
   private final PropertyRepository propertyRepository;
   private final PropertySequenceRepository propertySequenceRepository;
+  private final PropertyImageRepository propertyImageRepository;
+  private final S3StorageService s3StorageService;
 
   @Transactional
   public PropertyDetailsDTO registerPropertyByRentalProfileId(Long rentalProfileId, PropertyCreateDTO request)
@@ -83,22 +90,77 @@ public class PropertyService
     }
 
     Property savedProperty = propertyRepository.save(property);
-    return mapToPropertyDetailsDTO(savedProperty);
+    return Utility.propertyToPropertyDetailsDTO(savedProperty);
   }
 
   @Transactional
   public PropertyDetailsDTO getPropertyDetailsById(Long id)
   {
     Property property = propertyRepository.findById(id)
-      .orElseThrow(() -> new ResourceNotFoundException("Property with id " + id + " not found"));
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + id + NOT_FOUND));
 
-    return mapToPropertyDetailsDTO(property);
+    return Utility.propertyToPropertyDetailsDTO(property);
+  }
+
+  @Transactional
+  public PropertyImageDTO uploadPropertyImage(Long propertyId, MultipartFile file, Long createdByUserId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
+
+    S3StorageService.StoredImage storedImage = s3StorageService.uploadFile(file, property.getCode());
+
+    PropertyImage image = new PropertyImage();
+    image.setObjectKey(storedImage.objectKey());
+    image.setUrl(storedImage.url());
+    image.setFileName(storedImage.fileName());
+    image.setContentType(storedImage.contentType());
+    image.setSize(storedImage.size());
+    image.setCreatedByUserId(createdByUserId);
+    image.setPrimaryImage(property.getImages().isEmpty());
+    property.addImage(image);
+
+    PropertyImage savedImage = propertyImageRepository.save(image);
+    return mapToPropertyImageDTO(savedImage);
+  }
+
+  @Transactional
+  public List<PropertyImageDTO> getPropertyImages(Long propertyId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
+
+    return property.getImages().stream()
+      .map(this::mapToPropertyImageDTO)
+      .toList();
+  }
+
+  @Transactional
+  public void deletePropertyImage(Long propertyId, Long imageId)
+  {
+    Property property = propertyRepository.findById(propertyId)
+      .orElseThrow(() -> new ResourceNotFoundException(PROPERTY_WITH_ID + propertyId + NOT_FOUND));
+
+    PropertyImage image = propertyImageRepository.findById(imageId)
+      .orElseThrow(() -> new ResourceNotFoundException("Property image with id " + imageId + NOT_FOUND));
+
+    if (!image.getProperty().getId().equals(property.getId()))
+    {
+      throw new TanteException("Property image does not belong to this property");
+    }
+
+    property.getImages().remove(image);
+    s3StorageService.deleteFile(image.getObjectKey());
+    propertyImageRepository.delete(image);
   }
 
   @Transactional
   public List<PropertyDetailsDTO> getAllProperties()
   {
-    return propertyRepository.findAll().stream().map(this::mapToPropertyDetailsDTO).toList();
+    return propertyRepository.findAll()
+      .stream()
+      .map(Utility::propertyToPropertyDetailsDTO)
+      .toList();
   }
 
   private void createBuildingsForProperty(Property property, int numberOfBuildings)
@@ -161,25 +223,22 @@ public class PropertyService
     return owners;
   }
 
-  private PropertyDetailsDTO mapToPropertyDetailsDTO(Property property)
+
+
+  private PropertyImageDTO mapToPropertyImageDTO(PropertyImage image)
   {
-    Location location = property.getLocation();
-    LocationDetailsDTO locationDetailsDTO = mapToLocationDetailsDTO(location);
+    if (image == null)
+    {
+      return null;
+    }
 
-    List<Building> buildings = property.getBuildings();
-    List<BuildingDetailsDTO> buildingDetailsDTOs = mapToBuildingDetailsDTOs(buildings, property.getId());
-
-    return new PropertyDetailsDTO(
-      property.getId(),
-      property.getCode(),
-      property.getDescription(),
-      property.getName(),
-      property.getLandSize(),
-      property.getLandSizeUnit(),
-      property.getType() == null ? null : property.getType().toString(),
-      property.getDevelopmentStatus() == null ? null : property.getDevelopmentStatus().toString(),
-      locationDetailsDTO,
-      buildingDetailsDTOs
+    return new PropertyImageDTO(
+      image.getId(),
+      image.getUrl(),
+      image.getFileName(),
+      image.getContentType(),
+      image.getSize(),
+      image.isPrimaryImage()
     );
   }
 
@@ -191,98 +250,9 @@ public class PropertyService
     return propertySequenceRepository.save(sequence);
   }
 
-  private LocationDetailsDTO mapToLocationDetailsDTO(Location location)
-  {
-    if (location == null)
-    {
-      return null;
-    }
-
-    Address address = location.getAddress();
-    AddressDTO addressDTO = mapToAddressDTO(address);
-
-    return new LocationDetailsDTO(
-      location.getLatitude(),
-      location.getLongitude(),
-      addressDTO
-    );
-  }
-
-  private AddressDTO mapToAddressDTO(Address address)
-  {
-    if (address == null)
-    {
-      return null;
-    }
-
-    return new AddressDTO(
-      address.getPostalCode(),
-      address.getStreetNumber(),
-      address.getStreetName(),
-      address.getCity(),
-      address.getWard(),
-      address.getRegion(),
-      address.getCountry()
-    );
-  }
-  private List<BuildingDetailsDTO> mapToBuildingDetailsDTOs(List<Building> buildings, Long propertyId)
-  {
-    List<BuildingDetailsDTO> buildingDetailsDTOs = new ArrayList<>();
-    for (Building building : buildings)
-    {
-      List<UnitDetailsDTO> unitDetailsDTOs = mapToUnitDetailsDTOs(building.getUnits(), building.getId());
-      BuildingDetailsDTO buildingDetailsDTO = new BuildingDetailsDTO(
-        propertyId,
-        building.getId(),
-        building.getName(),
-        building.getNumber(),
-        building.getCode(),
-        building.getDescription(),
-        building.getNumberOfFloors(),
-        unitDetailsDTOs
-      );
-      buildingDetailsDTOs.add(buildingDetailsDTO);
-    }
-    return buildingDetailsDTOs;
-  }
-
-  private List<UnitDetailsDTO> mapToUnitDetailsDTOs(List<Unit> units, Long buildingId)
-  {
-    List<UnitDetailsDTO> unitDetailsDTOs = new ArrayList<>();
-    for (Unit unit : units)
-    {
-      UnitDetailsDTO unitDetailsDTO = mapToUnitDetailsDTO(unit, buildingId);
-      unitDetailsDTOs.add(unitDetailsDTO);
-    }
-    return unitDetailsDTOs;
-  }
-
-  private UnitDetailsDTO mapToUnitDetailsDTO(Unit unit, Long buildingId)
-  {
-    if (unit == null)
-    {
-      return null;
-    }
-
-    return new UnitDetailsDTO(
-      unit.getId(),
-      unit.getUnitNumber(),
-      unit.getRentalProfileId(),
-      unit.getNumberOfBedrooms(),
-      unit.getNumberOfBathrooms(),
-      unit.getNumberParkingSpots(),
-      unit.getRentAmount(),
-      unit.getType(),
-      unit.getStatus(),
-      unit.getRoomSize(),
-      unit.getSizeUnit(),
-      buildingId
-    );
-  }
-
   public List<PropertyDetailsDTO> getPropertiesByRentalProfileId(Long rentalProfileId)
   {
     List<Property> properties = propertyRepository.findByRentalProfileId(rentalProfileId);
-    return properties.stream().map(this::mapToPropertyDetailsDTO).toList();
+    return properties.stream().map(Utility::propertyToPropertyDetailsDTO).toList();
   }
 }

@@ -1,6 +1,9 @@
 package tz.tante.property.manager.models.dtos.responses;
 
 
+import tz.tante.property.manager.enums.DevelopmentStatus;
+import tz.tante.property.manager.enums.PropertyType;
+
 import java.util.List;
 
 public record PropertyDetailsDTO(
@@ -10,10 +13,11 @@ public record PropertyDetailsDTO(
   String name,
   Double landSize,
   String landSizeUnit,
-  String type,
-  String developmentStatus,
+  PropertyType type,
+  DevelopmentStatus developmentStatus,
   LocationDetailsDTO location,
-  List<BuildingDetailsDTO> buildings
+  List<BuildingDetailsDTO> buildings,
+  List<PropertyImageDTO> images
 )
 {
 }
