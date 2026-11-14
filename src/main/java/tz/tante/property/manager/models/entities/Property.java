@@ -23,7 +23,7 @@ public class Property extends BaseEntity
 {
   private Long rentalProfileId;
 
-  @Column(length = 2000)
+  @Column(columnDefinition = "TEXT")
   private String description;
 
   private String name;

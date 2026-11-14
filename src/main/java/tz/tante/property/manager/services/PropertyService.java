@@ -198,7 +198,7 @@ public class PropertyService
 
     return new Address(
       address.postalCode(),
-      address.streetNumber(),
+      address.houseNumber(),
       address.streetName(),
       address.ward(),
       address.city(),

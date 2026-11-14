@@ -24,6 +24,7 @@ public record UnitDetailsDTO(
   boolean isListed,
   int floorNumber,
   BuildingSummaryDTO building,
-  List<UnitImageDTO> images)
+  List<UnitImageDTO> images,
+  List<Long> agents)
 {
 }
