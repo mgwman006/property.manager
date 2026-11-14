@@ -94,7 +94,7 @@ public class Utility
     {
       addressDTO = new AddressDTO(
         address.getPostalCode(),
-        address.getStreetNumber(),
+        address.getHouseNumber(),
         address.getStreetName(),
         address.getWard(),
         address.getCity(),

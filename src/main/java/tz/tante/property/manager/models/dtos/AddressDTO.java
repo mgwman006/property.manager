@@ -1,8 +1,8 @@
 package tz.tante.property.manager.models.dtos;
 
 public record AddressDTO(
-  long postalCode,
-  long streetNumber,
+  Long postalCode,
+  Long houseNumber,
   String streetName,
   String ward,
   String city,

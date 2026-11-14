@@ -14,9 +14,9 @@ import lombok.Setter;
 @Embeddable
 public class Address
 {
-  private long postalCode;
+  private Long postalCode;
 
-  private long streetNumber;
+  private Long houseNumber;
 
   private String streetName;
 

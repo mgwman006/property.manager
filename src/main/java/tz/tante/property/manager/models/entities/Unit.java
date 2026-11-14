@@ -69,12 +69,8 @@ public class Unit extends BaseEntity
   )
   private List<UnitImage> images = new ArrayList<>();
 
-  @OneToMany(
-    mappedBy = "unit",
-    cascade = CascadeType.ALL,
-    orphanRemoval = true
-  )
-  private Set<UnitListingManager> listingManagers = new HashSet<>();
+  @ElementCollection(fetch = FetchType.EAGER)
+  private Set<Long> agents = new HashSet<>();
 
   public void addImage(UnitImage image) {
     images.add(image);

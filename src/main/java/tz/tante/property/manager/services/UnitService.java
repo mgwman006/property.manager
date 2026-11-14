@@ -36,8 +36,9 @@ public class UnitService
    * CONSTANTS
    * ---------
    */
-  private static final String CLASS_NAME = UnitService.class.getSimpleName();
   private static final String NOT_FOUND = " not found";
+  private static final String BUILDING = "building";
+  private static final String STATUS = "status";
   /**
    * FIELDS
    * ------
@@ -87,7 +88,7 @@ public class UnitService
     if (buildingId != null)
     {
       specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
-        criteriaBuilder.equal(root.get("building").get("id"), buildingId)
+        criteriaBuilder.equal(root.get(BUILDING).get("id"), buildingId)
       );
     }
 
@@ -108,7 +109,7 @@ public class UnitService
     if (status != null)
     {
       specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
-        criteriaBuilder.equal(root.get("status"), status)
+        criteriaBuilder.equal(root.get(STATUS), status)
       );
     }
 
@@ -116,7 +117,7 @@ public class UnitService
     {
       String cityFilter = city.trim();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("city")), "%" + cityFilter.toLowerCase() + "%");
@@ -127,7 +128,7 @@ public class UnitService
     {
       String regionFilter = region.trim();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("region")), "%" + regionFilter.toLowerCase() + "%");
@@ -138,7 +139,7 @@ public class UnitService
     {
       String wardFilter = ward.trim();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("ward")), "%" + wardFilter.toLowerCase() + "%");
@@ -149,7 +150,7 @@ public class UnitService
     {
       String streetNameFilter = streetName.trim();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("streetName")), "%" + streetNameFilter.toLowerCase() + "%");
@@ -160,7 +161,7 @@ public class UnitService
     {
       String countryFilter = country.trim();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("country")), "%" + countryFilter.toLowerCase() + "%");
@@ -214,7 +215,7 @@ public class UnitService
       String normalized = query.trim();
       String lowerQuery = normalized.toLowerCase();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join("building", JoinType.LEFT);
+        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
         var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
         var locationJoin = propertyJoin.join("location", JoinType.LEFT);
         return criteriaBuilder.or(
@@ -295,7 +296,7 @@ public class UnitService
     double lngDelta = radiusKm / (111.0 * Math.cos(Math.toRadians(latitude)));
 
     specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-      var buildingJoin = root.join("building", JoinType.LEFT);
+      var buildingJoin = root.join(BUILDING, JoinType.LEFT);
       var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
       var locationJoin = propertyJoin.join("location", JoinType.LEFT);
 
@@ -340,6 +341,21 @@ public class UnitService
     Building building = buildingRepository.findById(buildingId)
       .orElseThrow(() -> new ResourceNotFoundException("Building with ID " + buildingId + NOT_FOUND));
 
+    Unit unit = getUnit(request, UnitStatus.AVAILABLE);
+
+    if (request.rentalProfileId() != null) 
+    {
+      unit.getAgents().add(request.rentalProfileId());
+    }
+
+    building.addUnit(unit);
+    unit = unitRepository.save(unit);
+
+    return Utility.unitToUnitSummaryDTO(unit);
+  }
+
+  private static Unit getUnit(UnitCreateDTO request, UnitStatus status)
+  {
     Unit unit = new Unit();
     unit.setUnitNumber(request.unitNumber());
     unit.setRentalProfileId(request.rentalProfileId());
@@ -348,14 +364,10 @@ public class UnitService
     unit.setNumberParkingSpots(request.numberParkingSpots());
     unit.setRentAmount(request.rentAmount());
     unit.setType(request.type());
-    unit.setStatus(UnitStatus.AVAILABLE);
+    unit.setStatus(status);
     unit.setRoomSize(request.roomSize());
     unit.setSizeUnit(request.sizeUnit());
-
-    building.addUnit(unit);
-    unit = unitRepository.save(unit);
-
-    return Utility.unitToUnitSummaryDTO(unit);
+    return unit;
   }
 
   public UnitStatus getUnitStatus(Long unitId)
@@ -445,7 +457,8 @@ public class UnitService
       unit.isListed(),
       unit.getFloorNumber(),
       Utility.buildingToBuildingSummaryDTO(unit.getBuilding()),
-      imageDTOs);
+      imageDTOs,
+      unit.getAgents().stream().toList());
   }
 
 
