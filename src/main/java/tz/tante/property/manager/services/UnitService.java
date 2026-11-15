@@ -39,6 +39,10 @@ public class UnitService
   private static final String NOT_FOUND = " not found";
   private static final String BUILDING = "building";
   private static final String STATUS = "status";
+  private static final String ADDRESS = "address";
+  private static final String PROPERTY = "property";
+  private static final String LOCATION = "location";
+
   /**
    * FIELDS
    * ------
@@ -55,15 +59,9 @@ public class UnitService
     String sortBy,
     String direction,
     Boolean isListed,
-    Long buildingId,
-    Long rentalProfileId,
     UnitType type,
     UnitStatus status,
-    String city,
-    String region,
-    String ward,
-    String streetName,
-    String country,
+    String location,
     Integer minBedrooms,
     Integer maxBedrooms,
     Integer minBathrooms,
@@ -85,20 +83,6 @@ public class UnitService
       );
     }
 
-    if (buildingId != null)
-    {
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
-        criteriaBuilder.equal(root.get(BUILDING).get("id"), buildingId)
-      );
-    }
-
-    if (rentalProfileId != null)
-    {
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
-        criteriaBuilder.equal(root.get("rentalProfileId"), rentalProfileId)
-      );
-    }
-
     if (type != null)
     {
       specification = specification.and((root, criteriaQuery, criteriaBuilder) ->
@@ -113,58 +97,22 @@ public class UnitService
       );
     }
 
-    if (city != null && !city.isBlank())
+    if (location != null && !location.isBlank())
     {
-      String cityFilter = city.trim();
+      String locationFilter = location.trim().toLowerCase();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
         var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
-        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("city")), "%" + cityFilter.toLowerCase() + "%");
-      });
-    }
+        var propertyJoin = buildingJoin.join(PROPERTY, JoinType.LEFT);
+        var locationJoin = propertyJoin.join(LOCATION, JoinType.LEFT);
+        var address = locationJoin.get(ADDRESS);
 
-    if (region != null && !region.isBlank())
-    {
-      String regionFilter = region.trim();
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
-        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("region")), "%" + regionFilter.toLowerCase() + "%");
-      });
-    }
-
-    if (ward != null && !ward.isBlank())
-    {
-      String wardFilter = ward.trim();
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
-        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("ward")), "%" + wardFilter.toLowerCase() + "%");
-      });
-    }
-
-    if (streetName != null && !streetName.isBlank())
-    {
-      String streetNameFilter = streetName.trim();
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
-        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("streetName")), "%" + streetNameFilter.toLowerCase() + "%");
-      });
-    }
-
-    if (country != null && !country.isBlank())
-    {
-      String countryFilter = country.trim();
-      specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
-        var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
-        return criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("country")), "%" + countryFilter.toLowerCase() + "%");
+        return criteriaBuilder.or(
+          criteriaBuilder.like(criteriaBuilder.lower(address.get("streetName")), "%" + locationFilter + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(address.get("ward")), "%" + locationFilter + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(address.get("city")), "%" + locationFilter + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(address.get("region")), "%" + locationFilter + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(address.get("country")), "%" + locationFilter + "%")
+        );
       });
     }
 
@@ -216,18 +164,18 @@ public class UnitService
       String lowerQuery = normalized.toLowerCase();
       specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
         var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-        var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-        var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+        var propertyJoin = buildingJoin.join(PROPERTY, JoinType.LEFT);
+        var locationJoin = propertyJoin.join(LOCATION, JoinType.LEFT);
         return criteriaBuilder.or(
           criteriaBuilder.like(criteriaBuilder.lower(root.get("unitNumber")), "%" + lowerQuery + "%"),
           criteriaBuilder.like(criteriaBuilder.lower(buildingJoin.get("code")), "%" + lowerQuery + "%"),
           criteriaBuilder.like(criteriaBuilder.lower(buildingJoin.get("name")), "%" + lowerQuery + "%"),
           criteriaBuilder.like(criteriaBuilder.lower(propertyJoin.get("name")), "%" + lowerQuery + "%"),
-          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("city")), "%" + lowerQuery + "%"),
-          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("region")), "%" + lowerQuery + "%"),
-          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("ward")), "%" + lowerQuery + "%"),
-          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("streetName")), "%" + lowerQuery + "%"),
-          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get("address").get("country")), "%" + lowerQuery + "%")
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get(ADDRESS).get("city")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get(ADDRESS).get("region")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get(ADDRESS).get("ward")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get(ADDRESS).get("streetName")), "%" + lowerQuery + "%"),
+          criteriaBuilder.like(criteriaBuilder.lower(locationJoin.get(ADDRESS).get("country")), "%" + lowerQuery + "%")
         );
       });
     }
@@ -297,8 +245,8 @@ public class UnitService
 
     specification = specification.and((root, criteriaQuery, criteriaBuilder) -> {
       var buildingJoin = root.join(BUILDING, JoinType.LEFT);
-      var propertyJoin = buildingJoin.join("property", JoinType.LEFT);
-      var locationJoin = propertyJoin.join("location", JoinType.LEFT);
+      var propertyJoin = buildingJoin.join(PROPERTY, JoinType.LEFT);
+      var locationJoin = propertyJoin.join(LOCATION, JoinType.LEFT);
 
       return criteriaBuilder.and(
         criteriaBuilder.greaterThanOrEqualTo(locationJoin.get("latitude"), latitude - latDelta),
