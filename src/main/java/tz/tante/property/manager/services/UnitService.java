@@ -315,6 +315,7 @@ public class UnitService
     unit.setStatus(status);
     unit.setRoomSize(request.roomSize());
     unit.setSizeUnit(request.sizeUnit());
+    unit.setListed(request.isListed());
     return unit;
   }
 
