@@ -1,7 +1,6 @@
 package tz.tante.property.manager.models.dtos.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import tz.tante.property.manager.enums.UnitStatus;
 import tz.tante.property.manager.enums.UnitType;
@@ -21,6 +20,11 @@ public record UnitCreateDTO(
   UnitType type,
   UnitStatus status,
   Long roomSize,
-  String sizeUnit)
+  String sizeUnit,
+  Boolean isListed )
 {
+  public UnitCreateDTO
+  {
+     isListed = isListed == null ? false : isListed;
+  }
 }
